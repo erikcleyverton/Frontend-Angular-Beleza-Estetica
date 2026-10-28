@@ -1,0 +1,74 @@
+<section class="carrinho-secao">
+  <header class="carrinho-header">
+    <h2>Seu Carrinho de Compras</h2>
+    <p>Revise os tratamentos e produtos selecionados antes de finalizar</p>
+  </header>
+
+  <div class="carrinho-container">
+    <!-- Lista de Itens -->
+    <div class="carrinho-lista">
+      
+      <!-- Mensagem de Carrinho Vazio -->
+      <div *ngIf="itens.length === 0" class="carrinho-vazio">
+        <p>O seu carrinho está vazio no momento.</p>
+      </div>
+
+      <!-- Iteração Dinâmica de Itens -->
+      <div class="carrinho-item" *ngFor="let item of itens">
+        <div class="item-foto">
+          <img [src]="item.imagem" [alt]="item.nome">
+        </div>
+        <div class="item-info">
+          <h3>{{ item.nome }}</h3>
+          <p class="item-categoria">{{ item.categoria }}</p>
+          <span class="item-preco-unitario">R$ {{ item.precoUnitario.toFixed(2) }}</span>
+        </div>
+        <div class="item-qtd">
+          <button type="button" class="btn-qtd" (click)="diminuirQtd(item.id)">-</button>
+          <span>{{ item.quantidade }}</span>
+          <button type="button" class="btn-qtd" (click)="aumentarQtd(item.id)">+</button>
+        </div>
+        <div class="item-subtotal">
+          <span>R$ {{ (item.precoUnitario * item.quantidade).toFixed(2) }}</span>
+        </div>
+        <button type="button" class="btn-remover" (click)="removerItem(item.id)" title="Remover item">
+          &times;
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Resumo do Pedido -->
+    <div class="carrinho-resumo">
+      <h3>Resumo do Pedido</h3>
+
+      <div class="resumo-linha">
+        <span>Subtotal</span>
+        <span>R$ {{ total.toFixed(2) }}</span>
+      </div>
+      <div class="resumo-linha">
+        <span>Desconto</span>
+        <span class="desconto">- R$ 0,00</span>
+      </div>
+
+      <div class="resumo-divisor"></div>
+
+      <div class="resumo-linha total">
+        <span>Total</span>
+        <span>R$ {{ total.toFixed(2) }}</span>
+      </div>
+
+      <button 
+        type="button" 
+        class="btn-finalizar" 
+        (click)="finalizarAtendimento()" 
+        [disabled]="itens.length === 0 || carregando">
+        {{ carregando ? 'Processando...' : 'Finalizar Agendamento' }}
+      </button>
+      
+      <button type="button" class="btn-continuar" (click)="voltarAoCatalogo()">
+        Continuar Comprando
+      </button>
+    </div>
+  </div>
+</section>

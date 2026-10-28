@@ -1,0 +1,242 @@
+.carrinho-secao {
+  padding: 50px 20px;
+  max-width: 1140px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+.carrinho-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.carrinho-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.carrinho-header p {
+  font-size: 14px;
+  color: #666666;
+}
+
+.carrinho-container {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+@media (max-width: 850px) {
+  .carrinho-container {
+    flex-direction: column;
+  }
+}
+
+.carrinho-lista {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.carrinho-vazio {
+  text-align: center;
+  padding: 40px 20px;
+  background: #ffffff;
+  border: 1px dashed #cccccc;
+  border-radius: 14px;
+  color: #666666;
+  font-size: 15px;
+}
+
+.carrinho-item {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.item-foto {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #fafafa;
+  flex-shrink: 0;
+}
+
+.item-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-info {
+  flex: 2;
+}
+
+.item-info h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 4px;
+}
+
+.item-categoria {
+  font-size: 12px;
+  color: #888888;
+  margin-bottom: 4px;
+}
+
+.item-preco-unitario {
+  font-size: 13px;
+  color: #555555;
+  font-weight: 600;
+}
+
+.item-qtd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8f8f8;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e8e8e8;
+}
+
+.btn-qtd {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #000000;
+  padding: 0 4px;
+}
+
+.item-qtd span {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+}
+
+.item-subtotal {
+  font-size: 16px;
+  font-weight: 700;
+  color: #000000;
+  min-width: 90px;
+  text-align: right;
+}
+
+.btn-remover {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #999999;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 0 4px;
+}
+
+.btn-remover:hover {
+  color: #ff0000;
+}
+
+.carrinho-resumo {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.carrinho-resumo h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+
+.resumo-linha {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 12px;
+}
+
+.resumo-linha.total {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.desconto {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.resumo-divisor {
+  height: 1px;
+  background-color: #f0f0f0;
+  margin: 16px 0;
+}
+
+.btn-finalizar {
+  width: 100%;
+  padding: 14px;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.12);
+  margin-bottom: 10px;
+}
+
+.btn-finalizar:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-finalizar:hover:not(:disabled) {
+  background-color: #222222;
+  transform: translateY(-1px);
+}
+
+.btn-continuar {
+  width: 100%;
+  padding: 12px;
+  background-color: transparent;
+  color: #666666;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-continuar:hover {
+  background-color: #fafafa;
+  color: #000000;
+}

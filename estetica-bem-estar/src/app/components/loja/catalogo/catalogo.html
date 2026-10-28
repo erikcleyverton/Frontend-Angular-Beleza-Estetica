@@ -1,0 +1,138 @@
+<section class="catalogo-secao">
+  <!-- Cabeçalho da Página de Catálogo -->
+  <header class="catalogo-header">
+    <span class="tag-categoria">ESTÉTICA & BEM-ESTAR</span>
+    <h2>Nossos Tratamentos Exclusivos</h2>
+    <p>Selecione os procedimentos desejados para agendar ou adicionar ao seu carrinho</p>
+  </header>
+
+  <!-- Grelha de Produtos/Serviços -->
+  <div class="catalogo-grid">
+
+    <!-- Item 1: Botox Facial -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/botox.jpg" alt="Botox Facial" loading="lazy">
+        <span class="badge-preco">R$ 350,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Botox Facial</h3>
+        <p class="produto-descricao">Tratamento para suavizar linhas de expressão e rugas, proporcionando uma pele rejuvenescida.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(1)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(1)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 2: Harmonização Facial -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/harmonizacao.jpg" alt="Harmonização Facial" loading="lazy">
+        <span class="badge-preco">R$ 890,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Harmonização Facial</h3>
+        <p class="produto-descricao">Procedimento estético para equilibrar os traços do rosto e realçar a sua beleza natural.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(2)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(2)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 3: Hidratante Facial -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/hidratantefacial.jpg" alt="Hidratante Facial" loading="lazy">
+        <span class="badge-preco">R$ 95,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Hidratante Facial</h3>
+        <p class="produto-descricao">Hidratação profunda para restaurar a maciez e o brilho saudável da pele.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(3)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(3)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 4: Lavagem Especializada -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/lavagem.jpg" alt="Lavagem Especializada" loading="lazy">
+        <span class="badge-preco">R$ 60,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Lavagem Especializada</h3>
+        <p class="produto-descricao">Higienização profunda para remover impurezas e preparar a pele para tratamentos.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(4)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(4)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 5: Massagem Corporal -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/massagem.jpg" alt="Massagem Corporal" loading="lazy">
+        <span class="badge-preco">R$ 130,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Massagem Corporal</h3>
+        <p class="produto-descricao">Massagem relaxante para aliviar o stresse e promover o bem-estar do corpo inteiro.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(5)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(5)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 6: Massagem Facial -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/massagemfacial.jpg" alt="Massagem Facial" loading="lazy">
+        <span class="badge-preco">R$ 85,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Massagem Facial</h3>
+        <p class="produto-descricao">Estímulo da circulação no rosto, reduzindo o inchaço e promovendo o relaxamento.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(6)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(6)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Item 7: Tónico Facial -->
+    <article class="card-produto">
+      <div class="card-media">
+        <img src="assets/tonico.jpg" alt="Tónico Facial" loading="lazy">
+        <span class="badge-preco">R$ 70,00</span>
+      </div>
+      <div class="card-detalhes">
+        <h3 class="produto-titulo">Tónico Facial</h3>
+        <p class="produto-descricao">Equilibra o pH da pele, fecha os poros e deixa a pele fresca durante todo o dia.</p>
+        <div class="card-acoes">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(7)">Ver detalhes</button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(7)">Adicionar</button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- Botões de Navegação do Rodapé -->
+  <div class="catalogo-rodape-acoes">
+    <button type="button" class="btn-voltar" (click)="voltar()">
+      Voltar
+    </button>
+    <button type="button" class="btn-ir-cadastro" (click)="irParaCadastro()">
+      Cadastrar Novo Cliente
+    </button>
+    <button type="button" class="btn-ir-carrinho" (click)="irParaCarrinho()">
+      Ir para o Carrinho
+    </button>
+  </div>
+</section>

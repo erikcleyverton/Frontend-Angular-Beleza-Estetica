@@ -1,0 +1,58 @@
+<div id="div-form">
+  <h2>Cadastro de Cliente</h2>
+  <form id="form-cliente">
+    <label for="nome">NOME</label>
+    <input type="text" name="nome" [(ngModel)]="nome" id="nome" class="input01" required maxlength="80" placeholder="Informe seu nome">
+
+    <label for="cpf">CPF</label>
+    <input type="text" name="cpf" [(ngModel)]="cpf" id="cpf" class="input02" required maxlength="14" placeholder="Informe seu CPF">
+
+    <label for="data_nascimento">DATA DE NASCIMENTO</label>
+    <input type="date" name="data_nascimento"[(ngModel)]="data_nascimento" id="data_nascimento" class="input02" required placeholder="Informe sua data de nascimento">
+
+    <label for="email">E-MAIL</label>
+    <input type="email" name="email" [(ngModel)]="email" id="email" class="input01" required maxlength="100" placeholder="Informe seu e-mail">
+
+    <label for="telefone">TELEFONE</label>
+    <input type="tel" name="telefone" [(ngModel)]="telefone" id="telefone" class="input02" required maxlength="15" placeholder="Informe seu telefone">
+<label class="label-titulo">SEXO</label>
+
+<div class="grupo-sexo">
+  <label class="radio-label">
+    <input type="radio" name="sexo" [(ngModel)]="sexo" id="sexoM" class="btnSelecao" value="M"> Masculino
+  </label>
+
+  <label class="radio-label">
+    <input type="radio" name="sexo" [(ngModel)]="sexo" id="sexoF" class="btnSelecao" value="F"> Feminino
+  </label>
+
+  <label class="radio-label">
+    <input type="radio" name="sexo" [(ngModel)]="sexo" id="sexoN" class="btnSelecao" value="N"> Não se Identificar
+  </label>
+</div>
+
+    <label for="cep">CEP</label>
+    <input type="text" name="cep" [(ngModel)]="cep" id="cep" class="input02" required maxlength="9" placeholder="Informe seu CEP">
+
+    <label for="rua-logradouro">RUA/LOGRADOURO</label>
+    <input type="text" name="rua-logradouro" [(ngModel)]="rua_logradouro" id="rua-logradouro" class="input01" required maxlength="100" placeholder="Informe rua/logradouro">
+
+    <label for="bairro">BAIRRO</label>
+    <input type="text" name="bairro" [(ngModel)]="bairro" id="bairro" class="input02" required maxlength="50" placeholder="Informe seu bairro">
+
+    <label for="cidade">CIDADE</label>
+    <input type="text" name="cidade" [(ngModel)]="cidade" id="cidade" class="input02" required maxlength="60" placeholder="Informe sua cidade">
+
+    <label for="uf">UF</label>
+    <input type="text" name="uf" [(ngModel)]="uf" id="uf" class="input02" required maxlength="2" placeholder="Informe seu UF">
+
+    <!-- Ações Principais -->
+    <div id="div-btns">
+      <button type="button" id="BtnAdd"(click)="enviaDadosCliente()">
+        {{ editar ? 'Alterar Cliente' : 'Salvar' }}
+      </button>
+      <button type="reset" id="BtnLimpar" (click)="limparFormulario()">Limpar</button>
+      <button type="button" id="BtnVoltar" (click)="voltarAoCatalogo()">Voltar ao Catálogo</button>
+    </div>
+  </form>
+</div>

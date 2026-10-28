@@ -1,0 +1,212 @@
+/* Variáveis de Cores do Layout SoftCary / Estética & Bem-Estar */
+:root {
+  --header-bg: #FCEE9E;         /* Amarelo claro do cabeçalho */
+  --header-text: #2D2D2D;       /* Texto escuro dos menus */
+  --btn-black: #111111;         /* Botão de destaque "Agendar horário" */
+  --btn-orange: #FF8E56;        /* Botão principal "Nossos Tratamentos" */
+  --btn-orange-hover: #E57943;  /* Hover do botão de tratamentos */
+  --card-bg: #FFFFFF;           /* Fundo dos cards sobrepostos */
+  --dark-overlay: rgba(0, 0, 0, 0.45); /* Overlay escuro da imagem principal */
+}
+
+/* Base Geral */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* ==========================================
+   CABEÇALHO / NAVBAR (Topo Amarelo Suave)
+   ========================================== */
+.header-softcare {
+  background-color: var(--header-bg);
+  padding: 15px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.logo-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+.logo-subtitle {
+  background-color: #111;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: inline-block;
+  margin-top: -2px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--header-text);
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.nav-links a:hover {
+  opacity: 0.7;
+}
+
+.btn-agendar {
+  background-color: var(--btn-black);
+  color: #fff !important;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================
+   HERO SECTION (Banner Principal com Imagem)
+   ========================================== */
+.hero-section {
+  position: relative;
+  height: 85vh;
+  min-height: 550px;
+  /* Substituir o URL abaixo pela imagem oficial de fundo da clínica */
+  background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), 
+              url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  padding: 0 80px;
+}
+
+.hero-content {
+  max-width: 550px;
+  color: #ffffff;
+  z-index: 2;
+  margin-left: auto; /* Posiciona o texto à direita como na imagem */
+  margin-right: 10%;
+}
+
+.hero-tagline {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--btn-orange);
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 10px 0 20px 0;
+  line-height: 1.1;
+}
+
+.hero-description {
+  font-size: 16px;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 30px;
+}
+
+.btn-tratamentos {
+  background-color: var(--btn-orange);
+  color: #ffffff;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 25px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.btn-tratamentos:hover {
+  background-color: var(--btn-orange-hover);
+}
+
+/* ==========================================
+   CARDS SOBREPOSTOS (Flutuantes no Banner)
+   ========================================== */
+.floating-card-container {
+  position: absolute;
+  left: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 380px;
+}
+
+.info-card {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.info-card img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.info-card-text h4 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  color: #111;
+}
+
+.info-card-text p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.btn-more-treatments {
+  background: var(--card-bg);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  align-self: flex-end;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}

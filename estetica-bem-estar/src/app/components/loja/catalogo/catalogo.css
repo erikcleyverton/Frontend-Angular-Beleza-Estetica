@@ -1,0 +1,212 @@
+/* Container Principal */
+.catalogo-secao {
+  padding: 50px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+/* Cabeçalho */
+.catalogo-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.tag-categoria {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #666666;
+  text-transform: uppercase;
+}
+
+.catalogo-header h2 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #000000;
+  margin: 8px 0;
+}
+
+.catalogo-header p {
+  font-size: 14px;
+  color: #666666;
+}
+
+/* Grelha de Cards */
+.catalogo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px;
+}
+
+/* Card Individual */
+.card-produto {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #eaeaea;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-produto:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Imagem e Badge de Preço */
+.card-media {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background-color: #f8f8f8;
+}
+
+.card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.badge-preco {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Detalhes e Conteúdo */
+.card-detalhes {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.produto-titulo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.produto-descricao {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+/* Botões dos Cards */
+.card-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.btn-detalhes {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-detalhes:hover {
+  background: #f5f5f5;
+  color: #000000;
+}
+
+.btn-adicionar {
+  flex: 1;
+  padding: 10px;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.btn-adicionar:hover {
+  background: #222222;
+}
+
+/* Botões do Rodapé da Página */
+.catalogo-rodape-acoes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.btn-ir-carrinho {
+  padding: 14px 28px;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-ir-carrinho:hover {
+  background-color: #222222;
+  transform: translateY(-2px);
+}
+
+.btn-ir-cadastro {
+  padding: 14px 28px;
+  background-color: transparent;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ir-cadastro:hover {
+  background-color: #f5f5f5;
+  transform: translateY(-2px);
+}
+
+/* Botão Voltar */
+.btn-voltar {
+  padding: 14px 28px;
+  background-color: transparent;
+  color: #666666;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-voltar:hover {
+  background-color: #fafafa;
+  color: #000000;
+  border-color: #cccccc;
+  transform: translateY(-2px);
+}

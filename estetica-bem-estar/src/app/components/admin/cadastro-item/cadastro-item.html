@@ -1,0 +1,67 @@
+<div class="container mt-4">
+  <h2>Painel Administrativo - Cadastro de Produtos / Serviços</h2>
+  
+  <!-- Formulário de Cadastro -->
+  <div class="card p-3 mb-4 shadow-sm">
+    <h4>Novo Item</h4>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nome do Item *</label>
+        <input type="text" class="form-control" [(ngModel)]="nome" placeholder="Ex: Limpeza de Pele ou Creme Hidratante">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Tipo *</label>
+        <select class="form-select" [(ngModel)]="tipoItem">
+          <option value="P">Produto</option>
+          <option value="S">Serviço</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Preço (R$) *</label>
+        <input type="number" class="form-control" [(ngModel)]="preco" placeholder="0.00">
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Descrição</label>
+        <input type="text" class="form-control" [(ngModel)]="descricaoItem" placeholder="Descrição detalhada do item">
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <button class="btn btn-success me-2" (click)="salvarItem()">Salvar</button>
+      <button class="btn btn-secondary" (click)="limparFormulario()">Limpar</button>
+    </div>
+  </div>
+
+  <!-- Tabela de Itens Cadastrados -->
+  <h4>Itens Cadastrados</h4>
+  <table class="table table-striped table-bordered">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Tipo</th>
+        <th>Preço</th>
+        <th>Situação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of listaItens">
+        <td>{{ item.idItem || item.id }}</td>
+        <td>{{ item.nome }}</td>
+        <td>
+          <span class="badge" [ngClass]="item.tipoItem === 'P' ? 'bg-primary' : 'bg-info'">
+            {{ item.tipoItem === 'P' ? 'Produto' : 'Serviço' }}
+          </span>
+        </td>
+        <td>R$ {{ item.preco | number:'1.2-2' }}</td>
+        <td>{{ item.ativoProdutoServico === 'S' ? 'Ativo' : 'Inativo' }}</td>
+      </tr>
+      <tr *ngIf="listaItens.length === 0">
+        <td colspan="5" class="text-center">Nenhum item cadastrado ainda.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
