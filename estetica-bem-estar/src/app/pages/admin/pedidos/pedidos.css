@@ -1,0 +1,147 @@
+.admin-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-container h2 {
+    text-align: center;
+    color: #333333;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Seção de Filtro */
+  .filter-section {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  
+  .filter-section select {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #fafafa;
+  }
+  
+  /* Tabela Padrão */
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    border: 1px solid #dddddd;
+    padding: 0.75rem;
+    text-align: left;
+  }
+  
+  .admin-table th {
+    background-color: #f4f4f4;
+    color: #333333;
+    font-weight: 600;
+  }
+  
+  .admin-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  /* Badges e Botões de Ação */
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background-color: #e2e8f0;
+    color: #334155;
+  }
+  
+  .btn-action {
+    padding: 0.3rem 0.6rem;
+    margin-right: 0.3rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #0284c7;
+    color: #ffffff;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-action:hover {
+    background-color: #0369a1;
+  }
+  
+  .btn-action.success {
+    background-color: #16a34a;
+  }
+  
+  .btn-action.success:hover {
+    background-color: #15803d;
+  }
+  
+  .btn-action.danger {
+    background-color: #dc2626;
+  }
+  
+  .btn-action.danger:hover {
+    background-color: #b91c1c;
+  }
+  
+  /* Painel de Detalhes */
+  .detalhes-container {
+    margin-top: 1.5rem;
+    padding: 1.2rem;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+  
+  .detalhes-container h3, 
+  .detalhes-container h4 {
+    margin-top: 0;
+    color: #1e293b;
+  }
+  
+  .detalhes-container ul {
+    padding-left: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .detalhes-container li {
+    margin-bottom: 0.4rem;
+  }
+  
+  .no-data {
+    text-align: center;
+    color: #666666;
+    padding: 2rem;
+  }
+  
+  /* Botão Voltar */
+  .form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+  
+  #BtnVoltar {
+    padding: 0.6rem 1.2rem;
+    background-color: #64748b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  #BtnVoltar:hover {
+    background-color: #475569;
+  }

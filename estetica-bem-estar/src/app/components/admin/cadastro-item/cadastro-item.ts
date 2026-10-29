@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { CadastroItensService } from '../../../services/cadastro.itens.service';
 
 @Component({
   selector: 'app-cadastro-item',
@@ -13,68 +13,77 @@ import { Router } from '@angular/router';
 })
 export class CadastroItemComponent implements OnInit {
 
-  private readonly apiUrl = 'https://localhost:7077/api/itens';
-
-  // Campos do formulário
-  nome = '';
-  idCategoria = 1; // ID padrão de categoria
-  descricaoItem = '';
+  idItem = 0;
+  nomeItem = '';
+  tipoItem = 'P';
   preco = 0;
-  tipoItem = 'P'; // 'P' para Produto, 'S' para Serviço
-  ativoProdutoServico = 'S';
+  descricao = '';
 
-  // Lista de itens cadastrados
-  listaItens: any[] = [];
+  itens: any[] = [];
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private cadastroItensService: CadastroItensService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.carregarItens();
   }
 
-  // Busca todos os produtos e serviços na API C#
   carregarItens(): void {
-    this.http.get<any[]>(this.apiUrl).subscribe({
-      next: (dados) => this.listaItens = dados,
-      error: (erro) => console.error('Erro ao carregar itens:', erro)
+    this.cadastroItensService.obterItens().subscribe({
+      next: (dados: any[]) => {
+        this.itens = dados;
+      },
+      error: (err: any) => console.error('Erro ao carregar itens:', err)
     });
   }
 
-  // Cadastra um novo item
   salvarItem(): void {
-    if (!this.nome || this.preco <= 0) {
-      alert('Por favor, preencha o nome e um preço válido!');
+    if (!this.nomeItem.trim() || this.preco <= 0) {
+      alert('Preencha o nome do item e um preço válido!');
       return;
     }
-
-    const novoItem = {
-      nome: this.nome,
-      idCategoria: Number(this.idCategoria),
-      descricaoItem: this.descricaoItem,
+  
+    // Payload correspondente à estrutura exata do ProdutoDTO
+    const payload = {
+      // DADOS TABELA ITEM
+      idCategoria: 1, // Certifique-se de que a categoria ID 1 existe no seu banco
+      item: this.nomeItem.trim(),
+      descricaoItem: this.descricao ? this.descricao.trim() : '',
       preco: Number(this.preco),
-      tipoItem: this.tipoItem,
-      ativoProdutoServico: this.ativoProdutoServico
+      tipoItem: this.tipoItem, 
+      ativoProdutoServico: 'S',
+  
+      // DADOS TABELA PRODUTO
+      codigoPreco: 1,
+      precoVenda: Number(this.preco),
+      unidade: 'UN'
     };
-
-    this.http.post(this.apiUrl, novoItem).subscribe({
+  
+    console.log('Dados enviados ao backend:', JSON.stringify(payload));
+  
+    this.cadastroItensService.cadastrarItem(payload as any).subscribe({
       next: () => {
         alert('Item cadastrado com sucesso!');
         this.limparFormulario();
-        this.carregarItens(); // Atualiza a tabela
+        this.carregarItens();
       },
-      error: (erro) => {
-        console.error('Erro ao salvar item:', erro);
-        alert('Erro ao cadastrar item. Verifique o console.');
+      error: (err: any) => {
+        console.error('Erro detalhado da API:', err);
+        alert('Erro 500 no servidor. Verifique o console do Visual Studio para a exceção do C#.');
       }
     });
   }
-
   limparFormulario(): void {
-    this.nome = '';
-    this.idCategoria = 1;
-    this.descricaoItem = '';
-    this.preco = 0;
+    this.idItem = 0;
+    this.nomeItem = '';
     this.tipoItem = 'P';
-    this.ativoProdutoServico = 'S';
+    this.preco = 0;
+    this.descricao = '';
+  }
+
+  voltarHome(): void {
+    this.router.navigate(['/home']);
   }
 }

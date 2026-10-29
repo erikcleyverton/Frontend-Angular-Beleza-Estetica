@@ -1,0 +1,175 @@
+/* Container Principal sem caixa envolvente */
+#div-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 20px 0;
+    background-color: transparent;
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  #div-form h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  /* Formulário Aberto (sem background, sem border, sem box-shadow) */
+  #form-cliente {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+  
+  /* Labels e Inputs padronizados na vertical */
+  #form-cliente label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333333;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  
+  #form-cliente input[type="text"],
+  #form-cliente input[type="number"],
+  #form-cliente input[type="date"],
+  #form-cliente select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    background-color: #fafafa;
+    box-sizing: border-box;
+  }
+  
+  #form-cliente input:focus,
+  #form-cliente select:focus {
+    border-color: #000000;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Botões de Ação */
+  #div-btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    width: 100%;
+  }
+  
+  #div-btns button {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 25px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+  
+  /* Botão Salvar Entrada */
+  #BtnAdd {
+    background-color: #000000;
+    color: #ffffff;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  #BtnAdd:hover {
+    background-color: #222222;
+    transform: translateY(-1px);
+  }
+  
+  /* Botão Limpar */
+  #BtnLimpar {
+    background-color: #f0f0f0;
+    color: #333333;
+  }
+  
+  #BtnLimpar:hover {
+    background-color: #e2e2e2;
+  }
+  
+  /* Botão Voltar para a Home */
+  #BtnVoltar {
+    background-color: transparent;
+    color: #666666;
+    border: 1px solid #e0e0e0 !important;
+  }
+  
+  #BtnVoltar:hover {
+    background-color: #f9f9f9;
+    color: #000000;
+  }
+  
+  /* Tabela Padrão sem Card */
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 35px;
+    margin-bottom: 15px;
+    color: #000;
+  }
+  
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .admin-table th {
+    background-color: #000000;
+    color: #ffffff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .admin-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    color: #333333;
+  }
+  
+  .empty-message {
+    padding: 15px 0;
+    color: #666666;
+    font-size: 14px;
+  }
+
+  /* Container Principal — Centralizado no meio da tela */
+#div-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;       /* Centraliza o bloco do formulário na horizontal */
+    justify-content: center;   /* Centraliza o conteúdo na vertical */
+    min-height: calc(100vh - 120px); /* Ocupa a altura da tela considerando o header */
+    padding: 40px 20px;
+    background-color: transparent;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;            /* Garante a margem automática nas laterais */
+  }
+  
+  #div-form h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 20px;
+    text-align: center;        /* Centraliza o título */
+    width: 100%;
+  }

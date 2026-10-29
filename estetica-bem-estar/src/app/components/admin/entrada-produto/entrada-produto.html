@@ -1,0 +1,85 @@
+<div id="div-form">
+    <h2>Entrada de Produtos</h2>
+  
+    <form id="form-cliente" (ngSubmit)="salvarEntrada()">
+      <label for="idItem">PRODUTO *</label>
+      <select id="idItem" [(ngModel)]="idItem" name="idItem" required>
+        <option [value]="0" disabled>Selecione um produto</option>
+        <option *ngFor="let prod of produtos" [value]="prod.idItem || prod.id">
+          {{ prod.nomeItem || prod.nome }}
+        </option>
+      </select>
+  
+      <label for="quantidadeEntrada">QUANTIDADE *</label>
+      <input 
+        type="number" 
+        id="quantidadeEntrada" 
+        [(ngModel)]="quantidadeEntrada" 
+        name="quantidadeEntrada" 
+        min="1" 
+        required 
+      />
+  
+      <label for="valorUnitarioEntrada">PREÇO DE CUSTO (R$) *</label>
+      <input 
+        type="number" 
+        id="valorUnitarioEntrada" 
+        [(ngModel)]="valorUnitarioEntrada" 
+        name="valorUnitarioEntrada" 
+        step="0.01" 
+        min="0.01" 
+        required 
+      />
+  
+      <label for="dataEntradaProduto">DATA DE ENTRADA *</label>
+      <input 
+        type="date" 
+        id="dataEntradaProduto" 
+        [(ngModel)]="dataEntradaProduto" 
+        name="dataEntradaProduto" 
+        required 
+      />
+  
+      <label for="unidade">UNIDADE *</label>
+      <input 
+        type="text" 
+        id="unidade" 
+        [(ngModel)]="unidade" 
+        name="unidade" 
+        required 
+      />
+  
+      <div id="div-btns">
+        <button type="submit" id="BtnAdd">Salvar Entrada</button>
+        <button type="button" id="BtnLimpar" (click)="limparFormulario()">Limpar</button>
+        <button type="button" id="BtnVoltar" (click)="voltarHome()">Voltar</button>
+      </div>
+    </form>
+  
+    <h3 class="section-title">Histórico de Entradas</h3>
+  
+    <table class="admin-table" *ngIf="historicoEntradas.length > 0; else semEntradas">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Item</th>
+          <th>Qtd</th>
+          <th>Valor Unitário</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of historicoEntradas">
+          <td>{{ item.idEntradaProduto }}</td>
+          <td>{{ item.idItem }}</td>
+          <td>{{ item.quantidadeEntrada }} {{ item.unidade }}</td>
+          <td>R$ {{ item.valorUnitarioEntrada | number:'1.2-2' }}</td>
+          <td>{{ item.dataEntradaProduto | date:'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <ng-template #semEntradas>
+      <p class="empty-message">Nenhuma entrada cadastrada ainda.</p>
+    </ng-template>
+  </div>

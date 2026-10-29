@@ -1,0 +1,50 @@
+<div id="div-form">
+    <h2>Consulta de Estoque</h2>
+  
+    <form id="form-cliente" (submit)="$event.preventDefault(); filtrarEstoque()">
+      <label for="termoBusca">BUSCAR PRODUTO</label>
+      <input 
+        type="text" 
+        id="termoBusca" 
+        [(ngModel)]="termoBusca" 
+        name="termoBusca" 
+        placeholder="Digite o nome ou ID do produto..."
+        (input)="filtrarEstoque()"
+      />
+  
+      <div id="div-btns">
+        <button type="button" id="BtnAdd" (click)="filtrarEstoque()">Buscar</button>
+        <button type="button" id="BtnLimpar" (click)="limparFiltro()">Limpar</button>
+        <button type="button" id="BtnVoltar" (click)="voltarHome()">Voltar</button>
+      </div>
+    </form>
+  
+    <h3 class="section-title">Produtos em Estoque</h3>
+  
+    <table class="admin-table" *ngIf="estoqueFiltrado.length > 0; else semEstoque">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Produto</th>
+          <th>Qtd. Atual</th>
+          <th>Unidade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of estoqueFiltrado">
+          <td>{{ item.idItem }}</td>
+          <td>{{ item.item || item.nomeItem || ('Produto #' + item.idItem) }}</td>
+          <td>
+            <span [class.qtd-baixa]="item.quantidadeEstoque <= 5">
+              {{ item.quantidadeEstoque }}
+            </span>
+          </td>
+          <td>{{ item.unidade || 'UN' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <ng-template #semEstoque>
+      <p class="empty-message">Nenhum item encontrado no estoque.</p>
+    </ng-template>
+  </div>

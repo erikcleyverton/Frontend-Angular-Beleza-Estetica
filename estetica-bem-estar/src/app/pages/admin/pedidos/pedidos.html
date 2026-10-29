@@ -1,0 +1,67 @@
+<div class="admin-container">
+    <h2>Gestão de Pedidos em Aberto</h2>
+  
+    <!-- Filtro por Status -->
+    <div class="filter-section">
+      <label for="filtroStatus">Filtrar Status:</label>
+      <select id="filtroStatus" [(ngModel)]="filtroStatus" (change)="carregarPedidos()">
+        <option value="">Todos</option>
+        <option value="Aberto">Em Aberto</option>
+        <option value="Em Processamento">Em Processamento</option>
+        <option value="Concluído">Concluído</option>
+        <option value="Cancelado">Cancelado</option>
+      </select>
+    </div>
+  
+    <!-- Tabela de Pedidos -->
+    <table class="admin-table" *ngIf="pedidos.length > 0; else semPedidos">
+      <thead>
+        <tr>
+          <th>Nº Pedido</th>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th>Valor Total</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pedidos">
+          <td>#{{ p.idAtendimento }}</td>
+          <td>{{ p.nomeCliente }}</td>
+          <td>{{ p.dataAtendimento | date:'dd/MM/yyyy' }}</td>
+          <td>{{ p.valorTotal | currency:'BRL' }}</td>
+          <td><span class="status-badge">{{ p.statusAtendimento }}</span></td>
+          <td>
+            <button type="button" class="btn-action" (click)="verDetalhes(p.idAtendimento)">Detalhes</button>
+            <button type="button" class="btn-action success" (click)="alterarStatus(p.idAtendimento, 'Concluído')">Concluir</button>
+            <button type="button" class="btn-action danger" (click)="alterarStatus(p.idAtendimento, 'Cancelado')">Cancelar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <ng-template #semPedidos>
+      <p class="no-data">Nenhum pedido encontrado com o filtro selecionado.</p>
+    </ng-template>
+  
+    <!-- Modal / Painel de Detalhes -->
+    <div class="detalhes-container" *ngIf="pedidoSelecionado">
+      <h3>Detalhes do Pedido #{{ pedidoSelecionado.idAtendimento }}</h3>
+      <p><strong>Cliente:</strong> {{ pedidoSelecionado.nomeCliente }}</p>
+  
+      <h4>Itens do Atendimento:</h4>
+      <ul>
+        <li *ngFor="let item of pedidoSelecionado.itens">
+          {{ item.quantidade }}x {{ item.nomeItem }} - {{ item.valorUnitario | currency:'BRL' }}
+          <span *ngIf="item.funcionarioNome">(Atendido por: {{ item.funcionarioNome }})</span>
+        </li>
+      </ul>
+  
+      <button type="button" (click)="pedidoSelecionado = null">Fechar Detalhes</button>
+    </div>
+  
+    <div class="form-buttons">
+      <button type="button" id="BtnVoltar" (click)="voltarHome()">Voltar</button>
+    </div>
+  </div>
