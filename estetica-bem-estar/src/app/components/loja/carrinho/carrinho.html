@@ -1,6 +1,11 @@
 <section class="carrinho-secao">
   <header class="carrinho-header">
-    <h2>Seu Carrinho de Compras</h2>
+    <div class="carrinho-header-topo">
+      <button type="button" class="btn-voltar-topo" (click)="voltarAoCatalogo()">
+        &larr; Voltar
+      </button>
+      <h2>Seu Carrinho de Compras</h2>
+    </div>
     <p>Revise os tratamentos e produtos selecionados antes de finalizar</p>
   </header>
 
@@ -11,27 +16,34 @@
       <!-- Mensagem de Carrinho Vazio -->
       <div *ngIf="itens.length === 0" class="carrinho-vazio">
         <p>O seu carrinho está vazio no momento.</p>
+        <button type="button" class="btn-continuar" (click)="voltarAoCatalogo()">
+          Ir para o Catálogo
+        </button>
       </div>
 
       <!-- Iteração Dinâmica de Itens -->
       <div class="carrinho-item" *ngFor="let item of itens">
         <div class="item-foto">
-          <img [src]="item.imagem" [alt]="item.nome">
+          <img [src]="item.imagem || 'assets/placeholder.png'" [alt]="item.nome || 'Produto'">
         </div>
+        
         <div class="item-info">
           <h3>{{ item.nome }}</h3>
-          <p class="item-categoria">{{ item.categoria }}</p>
-          <span class="item-preco-unitario">R$ {{ item.precoUnitario.toFixed(2) }}</span>
+          <p class="item-categoria">{{ item.categoria || 'Geral' }}</p>
+          <span class="item-preco-unitario">R$ {{ item.precoUnitario | number:'1.2-2' }}</span>
         </div>
+
         <div class="item-qtd">
-          <button type="button" class="btn-qtd" (click)="diminuirQtd(item.id)">-</button>
+          <button type="button" class="btn-qtd" (click)="diminuirQtd(item)">-</button>
           <span>{{ item.quantidade }}</span>
-          <button type="button" class="btn-qtd" (click)="aumentarQtd(item.id)">+</button>
+          <button type="button" class="btn-qtd" (click)="aumentarQtd(item)">+</button>
         </div>
+
         <div class="item-subtotal">
-          <span>R$ {{ (item.precoUnitario * item.quantidade).toFixed(2) }}</span>
+          <span>R$ {{ (item.precoUnitario * item.quantidade) | number:'1.2-2' }}</span>
         </div>
-        <button type="button" class="btn-remover" (click)="removerItem(item.id)" title="Remover item">
+
+        <button type="button" class="btn-remover" (click)="removerItem(item)" title="Remover item">
           &times;
         </button>
       </div>
@@ -39,23 +51,24 @@
     </div>
 
     <!-- Resumo do Pedido -->
-    <div class="carrinho-resumo">
+    <div class="carrinho-resumo" *ngIf="itens.length > 0">
       <h3>Resumo do Pedido</h3>
 
       <div class="resumo-linha">
         <span>Subtotal</span>
-        <span>R$ {{ total.toFixed(2) }}</span>
+        <span>R$ {{ total | number:'1.2-2' }}</span>
       </div>
+
       <div class="resumo-linha">
         <span>Desconto</span>
-        <span class="desconto">- R$ 0,00</span>
+        <span class="desconto">R$ 0,00</span>
       </div>
 
       <div class="resumo-divisor"></div>
 
       <div class="resumo-linha total">
         <span>Total</span>
-        <span>R$ {{ total.toFixed(2) }}</span>
+        <span>R$ {{ total | number:'1.2-2' }}</span>
       </div>
 
       <button 
@@ -70,5 +83,6 @@
         Continuar Comprando
       </button>
     </div>
+
   </div>
 </section>

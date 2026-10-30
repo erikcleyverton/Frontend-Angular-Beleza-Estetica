@@ -37,7 +37,7 @@ body {
 .logo-title {
   font-size: 26px;
   font-weight: 800;
-  color: #111;
+  color: #226655;
   letter-spacing: -0.5px;
 }
 
@@ -103,7 +103,7 @@ body {
 
 .hero-content {
   max-width: 550px;
-  color: #ffffff;
+  color: #226655;
   z-index: 2;
   margin-left: auto; /* Posiciona o texto à direita como na imagem */
   margin-right: 10%;

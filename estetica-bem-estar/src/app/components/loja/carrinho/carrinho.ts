@@ -1,67 +1,87 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { CarrinhoService, ItemCarrinho } from '../../../services/carrinho.service';
+import { Subscription } from 'rxjs';
+import { CarrinhoService, ItemCarrinho } from '../../../services/carrinho.service'; // Ajuste o caminho se necessário
 
 @Component({
   selector: 'app-carrinho',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './carrinho.html',
-  styleUrls: ['./carrinho.css']
+  styleUrl: './carrinho.css'
 })
-export class CarrinhoComponent implements OnInit {
-
-  carregando = false;
+export class CarrinhoComponent implements OnInit, OnDestroy {
+  itens: ItemCarrinho[] = [];
+  total: number = 0;
+  carregando: boolean = false;
+  private sub!: Subscription;
 
   constructor(
-    private router: Router,
-    public carrinhoService: CarrinhoService
-  ) { }
+    private carrinhoService: CarrinhoService,
+    private router: Router
+  ) {}
 
-  ngOnInit(): void { }
-
-  get itens(): ItemCarrinho[] {
-    return this.carrinhoService.obterItens();
+  ngOnInit(): void {
+    // Inscreve-se nas atualizações reativas do serviço
+    this.sub = this.carrinhoService.itens$.subscribe(itens => {
+      this.itens = itens;
+      this.total = this.carrinhoService.obterTotal();
+    });
   }
 
-  get total(): number {
-    return this.carrinhoService.obterTotal();
+  ngOnDestroy(): void {
+    if (this.sub) {
+      this.sub.unsubscribe();
+    }
   }
 
-  aumentarQtd(id: number): void {
-    this.carrinhoService.aumentarQtd(id);
+  aumentarQtd(item: ItemCarrinho): void {
+    this.carrinhoService.aumentarQtd(item.id);
   }
 
-  diminuirQtd(id: number): void {
-    this.carrinhoService.diminuirQtd(id);
+  diminuirQtd(item: ItemCarrinho): void {
+    this.carrinhoService.diminuirQtd(item.id);
   }
 
-  removerItem(id: number): void {
-    this.carrinhoService.removerItem(id);
+  removerItem(item: ItemCarrinho): void {
+    this.carrinhoService.removerItem(item.id);
   }
 
   finalizarAtendimento(): void {
-    if (this.itens.length === 0) return;
+    if (this.itens.length === 0) {
+      alert('Seu carrinho está vazio!');
+      return;
+    }
 
     this.carregando = true;
 
-    this.carrinhoService.finalizarAgendamentoAPI().subscribe({
-      next: (resposta) => {
-        this.carregando = false;
-        alert('Atendimento registrado com sucesso no banco de dados!');
+    this.carrinhoService.finalizarAgendamentoAPI(1).subscribe({
+      next: (res: any) => {
+        alert('Agendamento/Pedido realizado com sucesso!');
         this.carrinhoService.limparCarrinho();
-        this.router.navigate(['/home']);
-      },
-      error: (erro) => {
         this.carregando = false;
-        console.error('Erro na integração com a API Atendimento:', erro);
-        alert('Erro ao ligar ao servidor. Verifique se o CORS e a API estão ativos.');
+        this.router.navigate(['/meus-pedidos']);
+      },
+      error: (err: any) => {
+        this.carregando = false;
+        console.error('Resposta de erro do backend (400):', err);
+
+        let mensagem = 'Erro de validação no pedido.';
+        if (err.error && err.error.errors) {
+          mensagem = Object.entries(err.error.errors)
+            .map(([campo, msgs]: [string, any]) => `${campo}: ${msgs.join(', ')}`)
+            .join('\n');
+        } else if (typeof err.error === 'string') {
+          mensagem = err.error;
+        }
+
+        alert(`Falha no Agendamento (400):\n${mensagem}`);
       }
     });
   }
 
   voltarAoCatalogo(): void {
-    this.router.navigate(['/catalogo']);
+    this.router.navigate(['/home']);
   }
 }

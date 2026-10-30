@@ -31,15 +31,38 @@ export class CatalogoComponent implements OnInit {
   abrirDetalhes(idItem: number): void {
     console.log('Ver detalhes:', idItem);
   }
+adicionarAoCarrinho(itemOuId: any): void {
+  let produtoEncontrado: any;
 
-  adicionarAoCarrinho(idItem: number): void {
-    const produto = this.produtosFixos.find(p => p.id === idItem);
-    if (produto) {
-      this.carrinhoService.adicionarItem(produto);
-      alert(`${produto.nome} adicionado ao carrinho!`);
-    }
+
+  if (typeof itemOuId === 'number' || typeof itemOuId === 'string') {
+    const idNumerico = Number(itemOuId);
+    produtoEncontrado = this.produtosFixos.find(p => p.id === idNumerico);
+  } else if (itemOuId && typeof itemOuId === 'object') {
+    // Se o HTML passou o objeto completo
+    produtoEncontrado = itemOuId;
   }
 
+  if (!produtoEncontrado) {
+    console.error('Produto não encontrado no catálogo:', itemOuId);
+    alert('Erro ao identificar o produto.');
+    return;
+  }
+
+  const idValido = produtoEncontrado.id || produtoEncontrado.idItem;
+  const nomeValido = produtoEncontrado.nome || produtoEncontrado.item || 'Item';
+  const precoValido = Number(produtoEncontrado.precoUnitario ?? produtoEncontrado.preco ?? produtoEncontrado.precoVenda ?? 0);
+
+  this.carrinhoService.adicionarItem({
+    id: idValido,
+    nome: nomeValido,
+    categoria: produtoEncontrado.categoria || 'Geral',
+    precoUnitario: precoValido,
+    imagem: produtoEncontrado.imagem || ''
+  });
+
+  alert(`${nomeValido} adicionado ao carrinho!`);
+}
   voltar(): void {
     this.router.navigate(['/home']);
   }

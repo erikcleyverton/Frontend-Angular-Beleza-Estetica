@@ -240,3 +240,23 @@
   background-color: #fafafa;
   color: #000000;
 }
+
+.carrinho-header-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-voltar-topo {
+  background: transparent;
+  border: 1px solid #ccc;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-voltar-topo:hover {
+  background-color: #f0f0f0;
+}

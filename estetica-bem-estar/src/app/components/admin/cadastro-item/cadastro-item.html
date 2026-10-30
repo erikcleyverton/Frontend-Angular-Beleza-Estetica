@@ -1,23 +1,40 @@
 <div id="div-form">
   <h2>Painel Administrativo - Cadastro de Produtos / Serviços</h2>
 
+  <!-- Abas de Navegação/Separação -->
+  <div class="tabs-container">
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="filtroTipo === 'P'" 
+      (click)="alternarTipo('P')">
+      Produtos
+    </button>
+    <button 
+      type="button" 
+      class="tab-btn" 
+      [class.active]="filtroTipo === 'S'" 
+      (click)="alternarTipo('S')">
+      Serviços
+    </button>
+  </div>
+
   <form id="form-cliente" (submit)="$event.preventDefault(); salvarItem()">
-    <label for="nomeItem">NOME DO ITEM *</label>
+    <label for="nomeItem">NOME DO {{ filtroTipo === 'P' ? 'PRODUTO' : 'SERVIÇO' }} *</label>
     <input 
       type="text" 
       id="nomeItem" 
       [(ngModel)]="nomeItem" 
       name="nomeItem" 
-      placeholder="Ex: Limpeza de Pele ou Creme Hidratante"
+      [placeholder]="filtroTipo === 'P' ? 'Ex: Creme Hidratante' : 'Ex: Limpeza de Pele'"
       required 
     />
 
     <label for="tipoItem">TIPO *</label>
-    <select id="tipoItem" [(ngModel)]="tipoItem" name="tipoItem" required>
-      <option value="P">Produto</option>
-      <option value="S">Serviço</option>
-    </select>
-
+   <select id="tipoItem" [(ngModel)]="tipoItem" name="tipoItem" (change)="alternarTipo($any($event.target).value)" required>
+  <option value="P">Produto</option>
+  <option value="S">Serviço</option>
+   </select>
     <label for="preco">PREÇO (R$) *</label>
     <input 
       type="number" 
@@ -45,9 +62,9 @@
     </div>
   </form>
 
-  <h3 class="section-title">Itens Cadastrados</h3>
+  <h3 class="section-title">{{ filtroTipo === 'P' ? 'Produtos' : 'Serviços' }} Cadastrados</h3>
 
-  <table class="admin-table" *ngIf="itens.length > 0; else semItens">
+  <table class="admin-table" *ngIf="itensFiltrados.length > 0; else semItens">
     <thead>
       <tr>
         <th>ID</th>
@@ -58,7 +75,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of itens">
+      <tr *ngFor="let item of itensFiltrados">
         <td>{{ item.idItem || item.id }}</td>
         <td>{{ item.item || item.nomeItem || item.nome }}</td>
         <td>{{ item.tipoItem === 'P' ? 'Produto' : 'Serviço' }}</td>
@@ -69,6 +86,6 @@
   </table>
 
   <ng-template #semItens>
-    <p class="empty-message">Nenhum item cadastrado ainda.</p>
+    <p class="empty-message">Nenhum {{ filtroTipo === 'P' ? 'produto' : 'serviço' }} cadastrado ainda.</p>
   </ng-template>
 </div>
