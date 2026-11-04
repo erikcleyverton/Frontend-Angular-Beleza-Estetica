@@ -210,3 +210,56 @@
   border-color: #cccccc;
   transform: translateY(-2px);
 }
+/* Container de filtros centralizado e alinhado */
+.box-filtros-catalogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* Input de pesquisa com cantos arredondados e preenchimento */
+.input-busca-catalogo {
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  min-width: 250px;
+}
+
+/* Grupo de botões em linha */
+.btn-group-tipo {
+  display: flex;
+  gap: 6px;
+}
+
+/* Estilo simples dos botões */
+.btn-group-tipo button {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-group-tipo button:hover {
+  background-color: #e2e8f0;
+}
+
+/* Botão selecionado */
+.btn-group-tipo button.active {
+  background-color: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+
+/* Correção para alinhar o texto e imagem no card */
+.card-media {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}

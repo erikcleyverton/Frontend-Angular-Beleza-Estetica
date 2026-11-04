@@ -1,85 +1,89 @@
-<div id="div-form">
+<section class="container-entrada">
+  <header class="entrada-header">
+    <span class="tag-categoria">GESTÃO DE ESTOQUE</span>
     <h2>Entrada de Produtos</h2>
-  
-    <form id="form-cliente" (ngSubmit)="salvarEntrada()">
-      <label for="idItem">PRODUTO *</label>
-      <select id="idItem" [(ngModel)]="idItem" name="idItem" required>
-        <option [value]="0" disabled>Selecione um produto</option>
-        <option *ngFor="let prod of produtos" [value]="prod.idItem || prod.id">
-          {{ prod.nomeItem || prod.nome }}
+    <p>Cadastre as mercadorias recebidas para atualizar o estoque (RF16 & RF17)</p>
+  </header>
+
+  <!-- Mensagens de Sucesso ou Erro (RF20) -->
+  <div *ngIf="mensagemSucesso" class="alert alert-sucesso">
+    {{ mensagemSucesso }}
+  </div>
+  <div *ngIf="mensagemErro" class="alert alert-erro">
+    {{ mensagemErro }}
+  </div>
+
+  <form (ngSubmit)="registrarEntrada()" class="form-entrada">
+    
+    <!-- Seleção do Produto -->
+    <div class="form-group">
+      <label for="idItem">Produto *</label>
+      <select id="idItem" [(ngModel)]="entrada.idItem" name="idItem" class="form-control" required>
+        <option [value]="0" disabled>Selecione o produto...</option>
+        <option *ngFor="let prod of produtosDisponiveis" [value]="prod.idItem || prod.id">
+          ID {{ prod.idItem || prod.id }} - {{ prod.nomeItem || prod.nome }}
         </option>
       </select>
-  
-      <label for="quantidadeEntrada">QUANTIDADE *</label>
+    </div>
+
+    <!-- Quantidade -->
+    <div class="form-group">
+      <label for="quantidadeEntrada">Quantidade Recebida *</label>
       <input 
         type="number" 
         id="quantidadeEntrada" 
-        [(ngModel)]="quantidadeEntrada" 
+        [(ngModel)]="entrada.quantidadeEntrada" 
         name="quantidadeEntrada" 
         min="1" 
+        class="form-control" 
         required 
       />
-  
-      <label for="valorUnitarioEntrada">PREÇO DE CUSTO (R$) *</label>
+    </div>
+
+    <!-- Unidade -->
+    <div class="form-group">
+      <label for="unidade">Unidade de Medida *</label>
+      <select id="unidade" [(ngModel)]="entrada.unidade" name="unidade" class="form-control" required>
+        <option value="UN">UN - Unidade</option>
+        <option value="CX">CX - Caixa</option>
+        <option value="KG">KG - Quilo</option>
+        <option value="ML">ML - Mililitros</option>
+      </select>
+    </div>
+
+    <!-- Valor Unitário -->
+    <div class="form-group">
+      <label for="valorUnitarioEntrada">Valor Unitário de Custo (R$) *</label>
       <input 
         type="number" 
         id="valorUnitarioEntrada" 
-        [(ngModel)]="valorUnitarioEntrada" 
+        [(ngModel)]="entrada.valorUnitarioEntrada" 
         name="valorUnitarioEntrada" 
         step="0.01" 
         min="0.01" 
+        placeholder="Ex: 45.00" 
+        class="form-control" 
         required 
       />
-  
-      <label for="dataEntradaProduto">DATA DE ENTRADA *</label>
+    </div>
+
+    <!-- Data -->
+    <div class="form-group">
+      <label for="dataEntradaProduto">Data da Entrada *</label>
       <input 
         type="date" 
         id="dataEntradaProduto" 
-        [(ngModel)]="dataEntradaProduto" 
+        [(ngModel)]="entrada.dataEntradaProduto" 
         name="dataEntradaProduto" 
+        class="form-control" 
         required 
       />
-  
-      <label for="unidade">UNIDADE *</label>
-      <input 
-        type="text" 
-        id="unidade" 
-        [(ngModel)]="unidade" 
-        name="unidade" 
-        required 
-      />
-  
-      <div id="div-btns">
-        <button type="submit" id="BtnAdd">Salvar Entrada</button>
-        <button type="button" id="BtnLimpar" (click)="limparFormulario()">Limpar</button>
-        <button type="button" id="BtnVoltar" (click)="voltarHome()">Voltar</button>
-      </div>
-    </form>
-  
-    <h3 class="section-title">Histórico de Entradas</h3>
-  
-    <table class="admin-table" *ngIf="historicoEntradas.length > 0; else semEntradas">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Item</th>
-          <th>Qtd</th>
-          <th>Valor Unitário</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of historicoEntradas">
-          <td>{{ item.idEntradaProduto }}</td>
-          <td>{{ item.idItem }}</td>
-          <td>{{ item.quantidadeEntrada }} {{ item.unidade }}</td>
-          <td>R$ {{ item.valorUnitarioEntrada | number:'1.2-2' }}</td>
-          <td>{{ item.dataEntradaProduto | date:'dd/MM/yyyy' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  
-    <ng-template #semEntradas>
-      <p class="empty-message">Nenhuma entrada cadastrada ainda.</p>
-    </ng-template>
-  </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="form-acoes">
+      <button type="button" class="btn-voltar" (click)="voltar()">Voltar</button>
+      <button type="submit" class="btn-salvar">Confirmar Entrada</button>
+    </div>
+  </form>
+</section>

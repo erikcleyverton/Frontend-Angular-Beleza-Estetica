@@ -18,6 +18,7 @@ export class CadastroItemComponent implements OnInit {
   tipoItem = 'P';
   preco = 0;
   descricao = '';
+  filtroTipo: 'P' | 'S' = 'P';
 
   itens: any[] = [];
 
@@ -38,64 +39,65 @@ export class CadastroItemComponent implements OnInit {
       error: (err: any) => console.error('Erro ao carregar itens:', err)
     });
   }
-salvarItem(): void {
-  if (!this.nomeItem.trim() || this.preco <= 0) {
-    alert('Preencha o nome do item e um preço válido!');
-    return;
+
+  salvarItem(): void {
+    if (!this.nomeItem.trim() || this.preco <= 0) {
+      alert('Preencha o nome do item e um preço válido!');
+      return;
+    }
+
+    // Payload correspondente à estrutura do ProdutoDTO / ItemDTO[cite: 14]
+    const payload = {
+      // DADOS TABELA ITEM[cite: 14]
+      idCategoria: 1,
+      item: this.nomeItem.trim(),
+      descricaoItem: this.descricao ? this.descricao.trim() : '',
+      preco: Number(this.preco),
+      tipoItem: this.tipoItem, 
+      ativoProdutoServico: 'S',
+
+      // DADOS TABELA PRODUTO[cite: 14]
+      codigoPreco: this.tipoItem === 'P' ? 1 : null,
+      precoVenda: Number(this.preco),
+      unidade: this.tipoItem === 'P' ? 'UN' : ''
+    };
+
+    console.log('Dados enviados ao backend:', JSON.stringify(payload));
+
+    this.cadastroItensService.cadastrarItem(payload as any).subscribe({
+      next: () => {
+        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} cadastrado com sucesso!`);
+        this.limparFormulario();
+        this.carregarItens();
+      },
+      error: (err: any) => {
+        console.error('Erro vindo do backend:', err.error);
+        const detalheErro = JSON.stringify(err.error);
+        console.log('Detalhe serializado:', detalheErro);
+
+        const mensagemBackend = err.error?.detalhe || err.error?.erro || err.error?.mensagem || 'Erro interno no servidor.';
+        alert(`Falha no cadastro: ${mensagemBackend}`);
+      }
+    });
   }
 
-  // Payload correspondente à estrutura do ProdutoDTO
-  const payload = {
-    // DADOS TABELA ITEM
-    idCategoria: 1,
-    item: this.nomeItem.trim(),
-    descricaoItem: this.descricao ? this.descricao.trim() : '',
-    preco: Number(this.preco),
-    tipoItem: this.tipoItem, 
-    ativoProdutoServico: 'S',
+  get itensFiltrados(): any[] {
+    return this.itens.filter(item => {
+      const tipo = item.tipoItem || item.tipo_item || 'P';
+      return tipo === this.filtroTipo;
+    });
+  }
 
-    // DADOS TABELA PRODUTO
-    codigoPreco: 1,
-    precoVenda: Number(this.preco),
-    unidade: 'UN'
-  };
+  alternarTipo(tipo: 'P' | 'S'): void {
+    this.filtroTipo = tipo;
+    this.tipoItem = tipo;
+    this.limparFormulario(); // Garante formulário limpo ao alternar entre Produto e Serviço
+  }
 
-  console.log('Dados enviados ao backend:', JSON.stringify(payload));
-
-  this.cadastroItensService.cadastrarItem(payload as any).subscribe({
-    next: () => {
-      alert('Item cadastrado com sucesso!');
-      this.limparFormulario();
-      this.carregarItens();
-    },
-  error: (err: any) => {
-  // Passar o objeto como segundo argumento permite clicar e expandir no console do navegador
-  console.error('Erro vindo do backend:', err.error);
-  
-  // Imprime no console a mensagem interna em texto limpo
-  const detalheErro = JSON.stringify(err.error);
-  console.log('Detalhe serializado:', detalheErro);
-
-  const mensagemBackend = err.error?.detalhe || err.error?.erro || err.error?.mensagem || 'Erro interno no servidor.';
-  alert(`Falha no cadastro: ${mensagemBackend}`);
-    }
-  });
-}
-
-  filtroTipo: 'P' | 'S' = 'P';
-
-get itensFiltrados(): any[] {
-  return this.itens.filter(item => (item.tipoItem || 'P') === this.filtroTipo);
-}
-
-alternarTipo(tipo: 'P' | 'S'): void {
-  this.filtroTipo = tipo;
-  this.tipoItem = tipo;
-}
   limparFormulario(): void {
     this.idItem = 0;
     this.nomeItem = '';
-    this.tipoItem = 'P';
+    this.tipoItem = this.filtroTipo; // Mantém o tipo da aba ativa
     this.preco = 0;
     this.descricao = '';
   }

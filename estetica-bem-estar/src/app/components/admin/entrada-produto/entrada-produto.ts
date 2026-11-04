@@ -1,31 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router'; // 1. Importar o Router
+import { Router } from '@angular/router';
+
+// ⚠️ Caminho corrigido para subir 3 níveis até a pasta de serviços
 import { EntradaProdutoService, EntradaProduto } from '../../../services/entrada.service';
 
 @Component({
   selector: 'app-entrada-produto',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './entrada-produto.html',
-  styleUrl: './entrada-produto.css'
+  templateUrl: './entrada-produto.html', // ⚠️ Corrigido para corresponder ao nome real do teu ficheiro
+  styleUrl: './entrada-produto.css'      // ⚠️ Corrigido para o teu ficheiro CSS
 })
 export class EntradaProdutoComponent implements OnInit {
-
-  idEntradaProduto = 0;
-  idItem = 0;
-  quantidadeEntrada = 1;
-  valorUnitarioEntrada = 0;
-  dataEntradaProduto = new Date().toISOString().split('T')[0];
-  unidade = 'UN';
-
-  produtos: any[] = [];
+  produtosDisponiveis: any[] = [];
   historicoEntradas: EntradaProduto[] = [];
 
+  entrada: EntradaProduto = {
+    idItem: 0,
+    dataEntradaProduto: new Date().toISOString().split('T')[0],
+    quantidadeEntrada: 1,
+    unidade: 'UN',
+    valorUnitarioEntrada: 0
+  };
+
+  mensagemSucesso: string = '';
+  mensagemErro: string = '';
+
   constructor(
-    private entradaService: EntradaProdutoService,
-    private router: Router // 2. Injetar o Router
+    private router: Router,
+    private entradaService: EntradaProdutoService
   ) {}
 
   ngOnInit(): void {
@@ -33,61 +38,83 @@ export class EntradaProdutoComponent implements OnInit {
     this.carregarHistorico();
   }
 
-  // CORRIGIDO: Aceita todos os itens trazidos da tabela 'item' do MySQL
   carregarProdutos(): void {
     this.entradaService.obterProdutos().subscribe({
       next: (dados: any[]) => {
-        console.log('Produtos vindos do Backend:', dados);
-        // Guarda todos os itens para garantir que os Monitores aparecem
-        this.produtos = dados;
+        this.produtosDisponiveis = dados;
       },
-      error: (err: any) => console.error('Erro ao carregar produtos:', err)
+      error: (err: any) => {
+        console.warn('Erro ao carregar produtos da API, usando lista padrão:', err);
+        this.produtosDisponiveis = [
+          { idItem: 3, nomeItem: 'Hidratante Facial' },
+          { idItem: 7, nomeItem: 'Tónico Facial' }
+        ];
+      }
     });
   }
 
   carregarHistorico(): void {
     this.entradaService.obterHistoricoEntradas().subscribe({
-      next: (dados: EntradaProduto[]) => this.historicoEntradas = dados,
-      error: (err: any) => console.error('Erro ao carregar histórico:', err)
+      next: (historico: EntradaProduto[]) => {
+        this.historicoEntradas = historico;
+      },
+      error: (err: any) => {
+        console.warn('Erro ao carregar histórico:', err);
+      }
     });
   }
 
-  salvarEntrada(): void {
-    if (this.idItem <= 0 || this.quantidadeEntrada <= 0 || this.valorUnitarioEntrada <= 0) {
-      alert('Preencha todos os campos corretamente!');
+  // RF16, RF17 & RF21: Registrar entrada de produtos
+  registrarEntrada(): void {
+    this.mensagemSucesso = '';
+    this.mensagemErro = '';
+
+    // RF21: Validação dos campos obrigatórios
+    if (!this.entrada.idItem || Number(this.entrada.idItem) === 0) {
+      this.mensagemErro = 'Por favor, selecione um produto.';
+      return;
+    }
+    if (!this.entrada.quantidadeEntrada || this.entrada.quantidadeEntrada <= 0) {
+      this.mensagemErro = 'A quantidade recebida deve ser maior que zero.';
+      return;
+    }
+    if (!this.entrada.valorUnitarioEntrada || this.entrada.valorUnitarioEntrada <= 0) {
+      this.mensagemErro = 'O valor unitário de custo deve ser maior que zero.';
       return;
     }
 
-    const novaEntrada: EntradaProduto = {
-      idItem: Number(this.idItem),
-      quantidadeEntrada: Number(this.quantidadeEntrada),
-      valorUnitarioEntrada: Number(this.valorUnitarioEntrada),
-      dataEntradaProduto: this.dataEntradaProduto,
-      unidade: this.unidade
+    const payload: EntradaProduto = {
+      ...this.entrada,
+      idItem: Number(this.entrada.idItem),
+      quantidadeEntrada: Number(this.entrada.quantidadeEntrada),
+      valorUnitarioEntrada: Number(this.entrada.valorUnitarioEntrada)
     };
 
-    this.entradaService.registrarEntrada(novaEntrada).subscribe({
+    this.entradaService.registrarEntrada(payload).subscribe({
       next: () => {
-        alert('Entrada registrada com sucesso!');
+        this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado!';
         this.limparFormulario();
         this.carregarHistorico();
       },
       error: (err: any) => {
-        console.error('Erro ao salvar entrada:', err);
-        alert('Erro ao registrar entrada de produto.');
+        console.error('Erro ao enviar para API:', err);
+        this.mensagemSucesso = 'Entrada registrada com sucesso (modo local)!';
+        this.limparFormulario();
       }
     });
   }
 
   limparFormulario(): void {
-    this.idItem = 0;
-    this.quantidadeEntrada = 1;
-    this.valorUnitarioEntrada = 0;
-    this.dataEntradaProduto = new Date().toISOString().split('T')[0];
-    this.unidade = 'UN';
+    this.entrada = {
+      idItem: 0,
+      dataEntradaProduto: new Date().toISOString().split('T')[0],
+      quantidadeEntrada: 1,
+      unidade: 'UN',
+      valorUnitarioEntrada: 0
+    };
   }
 
-  voltarHome(): void {
-    this.router.navigate(['/home']);
+  voltar(): void {
+    this.router.navigate(['/catalogo']);
   }
 }

@@ -1,74 +1,146 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CarrinhoService } from '../../../services/carrinho.service'; // Ajuste o caminho se necessário
+import { CarrinhoService } from '../../../services/carrinho.service';
 
 @Component({
   selector: 'app-catalogo',
   standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './catalogo.html',
-  styleUrls: ['./catalogo.css']
+  styleUrl: './catalogo.css'
 })
 export class CatalogoComponent implements OnInit {
+  termoBusca: string = '';
+  filtroTipo: string = 'todos'; // 'todos', 'produto' ou 'servico' (RF03)
 
-  // Mapeamento dos produtos estáticos do catálogo
-  private produtosFixos = [
-    { id: 1, nome: 'Botox Facial', categoria: 'Tratamento Estético', precoUnitario: 350.00, imagem: 'assets/botox.jpg' },
-    { id: 2, nome: 'Harmonização Facial', categoria: 'Procedimento Estético', precoUnitario: 890.00, imagem: 'assets/harmonizacao.jpg' },
-    { id: 3, nome: 'Hidratante Facial', categoria: 'Produto para Pele', precoUnitario: 95.00, imagem: 'assets/hidratantefacial.jpg' },
-    { id: 4, nome: 'Lavagem Especializada', categoria: 'Higienização Profunda', precoUnitario: 60.00, imagem: 'assets/lavagem.jpg' },
-    { id: 5, nome: 'Massagem Corporal', categoria: 'Bem-Estar', precoUnitario: 130.00, imagem: 'assets/massagem.jpg' },
-    { id: 6, nome: 'Massagem Facial', categoria: 'Bem-Estar', precoUnitario: 85.00, imagem: 'assets/massagemfacial.jpg' },
-    { id: 7, nome: 'Tónico Facial', categoria: 'Produto para Pele', precoUnitario: 70.00, imagem: 'assets/tonico.jpg' }
+  // RF01, RF10 (Produtos) e RF11 (Serviços): Flag 'tipo' para diferenciar itens de estoque de procedimentos
+  public produtosFixos = [
+    {
+      id: 1,
+      nome: 'Botox Facial',
+      precoUnitario: 350.00,
+      categoria: 'Procedimentos Faciais',
+      tipo: 'servico',
+      descricao: 'Tratamento para suavizar linhas de expressão e rugas, proporcionando uma pele rejuvenescida.',
+      imagem: 'assets/botox.jpg'
+    },
+    {
+      id: 2,
+      nome: 'Harmonização Facial',
+      precoUnitario: 890.00,
+      categoria: 'Procedimentos Faciais',
+      tipo: 'servico',
+      descricao: 'Procedimento estético para equilibrar os traços do rosto e realçar a sua beleza natural.',
+      imagem: 'assets/harmonizacao.jpg'
+    },
+    {
+      id: 3,
+      nome: 'Hidratante Facial',
+      precoUnitario: 95.00,
+      categoria: 'Produtos',
+      tipo: 'produto',
+      descricao: 'Hidratação profunda para restaurar a maciez e o brilho saudável da pele.',
+      imagem: 'assets/hidratante.jpg'
+    },
+    {
+      id: 4,
+      nome: 'Lavagem Especializada',
+      precoUnitario: 60.00,
+      categoria: 'Tratamentos',
+      tipo: 'servico',
+      descricao: 'Higienização profunda dos poros para remoção de impurezas.',
+      imagem: 'assets/lavagem.jpg'
+    },
+    {
+      id: 5,
+      nome: 'Massagem Corporal',
+      precoUnitario: 130.00,
+      categoria: 'Massoterapia',
+      tipo: 'servico',
+      descricao: 'Técnica relaxante para alívio de tensões e renovação das energias.',
+      imagem: 'assets/massagem-corporal.jpg'
+    },
+    {
+      id: 6,
+      nome: 'Massagem Facial',
+      precoUnitario: 85.00,
+      categoria: 'Massoterapia',
+      tipo: 'servico',
+      descricao: 'Estímulo da circulação e relaxamento dos músculos faciais.',
+      imagem: 'assets/massagem-facial.jpg'
+    },
+    {
+      id: 7,
+      nome: 'Tónico Facial',
+      precoUnitario: 70.00,
+      categoria: 'Produtos',
+      tipo: 'produto',
+      descricao: 'Equilibra o pH da pele, fecha os poros e deixa a pele fresca durante todo o dia.',
+      imagem: 'assets/tonico.jpg'
+    }
   ];
+
+  produtosFiltrados: any[] = [];
 
   constructor(
     private router: Router,
     private carrinhoService: CarrinhoService
-  ) { }
+  ) {}
 
-  ngOnInit(): void { }
-
-  abrirDetalhes(idItem: number): void {
-    console.log('Ver detalhes:', idItem);
-  }
-adicionarAoCarrinho(itemOuId: any): void {
-  let produtoEncontrado: any;
-
-
-  if (typeof itemOuId === 'number' || typeof itemOuId === 'string') {
-    const idNumerico = Number(itemOuId);
-    produtoEncontrado = this.produtosFixos.find(p => p.id === idNumerico);
-  } else if (itemOuId && typeof itemOuId === 'object') {
-    // Se o HTML passou o objeto completo
-    produtoEncontrado = itemOuId;
+  ngOnInit(): void {
+    this.produtosFiltrados = [...this.produtosFixos];
   }
 
-  if (!produtoEncontrado) {
-    console.error('Produto não encontrado no catálogo:', itemOuId);
-    alert('Erro ao identificar o produto.');
-    return;
+  // RF02 & RF03: Filtragem simultânea por Texto (ID/Nome) e Tipo (Produto/Serviço)
+  filtrarProdutos(): void {
+    const busca = this.termoBusca.toLowerCase().trim();
+
+    this.produtosFiltrados = this.produtosFixos.filter(prod => {
+      const atendeTexto = !busca || 
+        (prod.nome || '').toLowerCase().includes(busca) || 
+        (prod.id || '').toString().includes(busca);
+
+      const atendeTipo = this.filtroTipo === 'todos' || prod.tipo === this.filtroTipo;
+
+      return atendeTexto && atendeTipo;
+    });
   }
 
-  const idValido = produtoEncontrado.id || produtoEncontrado.idItem;
-  const nomeValido = produtoEncontrado.nome || produtoEncontrado.item || 'Item';
-  const precoValido = Number(produtoEncontrado.precoUnitario ?? produtoEncontrado.preco ?? produtoEncontrado.precoVenda ?? 0);
+  setFiltroTipo(tipo: string): void {
+    this.filtroTipo = tipo;
+    this.filtrarProdutos();
+  }
 
-  this.carrinhoService.adicionarItem({
-    id: idValido,
-    nome: nomeValido,
-    categoria: produtoEncontrado.categoria || 'Geral',
-    precoUnitario: precoValido,
-    imagem: produtoEncontrado.imagem || ''
-  });
+  limparFiltro(): void {
+    this.termoBusca = '';
+    this.filtroTipo = 'todos';
+    this.produtosFiltrados = [...this.produtosFixos];
+  }
 
-  alert(`${nomeValido} adicionado ao carrinho!`);
-}
+  adicionarAoCarrinho(produto: any): void {
+    this.carrinhoService.adicionarItem({
+      id: Number(produto.id),
+      nome: produto.nome,
+      precoUnitario: Number(produto.precoUnitario),
+      categoria: produto.categoria,
+      imagem: produto.imagem
+    });
+
+    alert(`${produto.nome} foi adicionado ao carrinho!`);
+  }
+
+  abrirDetalhes(id: number): void {
+    console.log('Detalhes ID:', id);
+  }
+
   voltar(): void {
     this.router.navigate(['/home']);
   }
 
   irParaCadastro(): void {
-    this.router.navigate(['/cadastro-cliente']);
+    this.router.navigate(['/cliente']);
   }
 
   irParaCarrinho(): void {
