@@ -1,21 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription, of } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
 
-// ⚠️ Caminho corrigido para subir 3 níveis até a pasta de serviços
 import { EntradaProdutoService, EntradaProduto } from '../../../services/entrada.service';
+import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
 
 @Component({
   selector: 'app-entrada-produto',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './entrada-produto.html', // ⚠️ Corrigido para corresponder ao nome real do teu ficheiro
-  styleUrl: './entrada-produto.css'      // ⚠️ Corrigido para o teu ficheiro CSS
+  templateUrl: './entrada-produto.html',
+  styleUrl: './entrada-produto.css'
 })
-export class EntradaProdutoComponent implements OnInit {
-  produtosDisponiveis: any[] = [];
+export class EntradaProdutoComponent implements OnInit, OnDestroy {
+  produtosDisponiveis: ItemSistema[] = [];
   historicoEntradas: EntradaProduto[] = [];
+  produtoSelecionado?: ItemSistema;
+
+  enviando: boolean = false;
 
   entrada: EntradaProduto = {
     idItem: 0,
@@ -28,83 +33,115 @@ export class EntradaProdutoComponent implements OnInit {
   mensagemSucesso: string = '';
   mensagemErro: string = '';
 
+  private subItens?: Subscription;
+
   constructor(
     private router: Router,
-    private entradaService: EntradaProdutoService
+    private entradaService: EntradaProdutoService,
+    private cadastroItensService: CadastroItensService
   ) {}
 
   ngOnInit(): void {
-    this.carregarProdutos();
+    this.carregarApenasProdutos();
     this.carregarHistorico();
   }
 
-  carregarProdutos(): void {
-    this.entradaService.obterProdutos().subscribe({
-      next: (dados: any[]) => {
-        this.produtosDisponiveis = dados;
+  ngOnDestroy(): void {
+    this.subItens?.unsubscribe();
+  }
+
+  carregarApenasProdutos(): void {
+    this.subItens = this.cadastroItensService.obterItens().subscribe({
+      next: (itens: ItemSistema[]) => {
+        this.produtosDisponiveis = itens.filter(
+          item => item.tipo === 'produto' || item.tipoItem === 'P'
+        );
       },
-      error: (err: any) => {
-        console.warn('Erro ao carregar produtos da API, usando lista padrão:', err);
-        this.produtosDisponiveis = [
-          { idItem: 3, nomeItem: 'Hidratante Facial' },
-          { idItem: 7, nomeItem: 'Tónico Facial' }
-        ];
-      }
+      error: (err: any) => console.error('Erro ao carregar produtos:', err)
     });
+  }
+
+  aoSelecionarProduto(): void {
+    const id = Number(this.entrada.idItem);
+    this.produtoSelecionado = this.produtosDisponiveis.find(p => Number(p.id || p.idItem) === id);
+
+    if (this.produtoSelecionado) {
+      this.entrada.valorUnitarioEntrada = Number(
+        this.produtoSelecionado.preco || 
+        this.produtoSelecionado.precoUnitario || 
+        this.produtoSelecionado.valorUnitario || 
+        0
+      );
+    }
   }
 
   carregarHistorico(): void {
-    this.entradaService.obterHistoricoEntradas().subscribe({
+    this.entradaService.obterHistoricoEntradas().pipe(
+      catchError(() => of([]))
+    ).subscribe({
       next: (historico: EntradaProduto[]) => {
-        this.historicoEntradas = historico;
-      },
-      error: (err: any) => {
-        console.warn('Erro ao carregar histórico:', err);
+        this.historicoEntradas = historico || [];
       }
     });
   }
+registrarEntrada(): void {
+    if (this.enviando) return;
 
-  // RF16, RF17 & RF21: Registrar entrada de produtos
-  registrarEntrada(): void {
     this.mensagemSucesso = '';
     this.mensagemErro = '';
 
-    // RF21: Validação dos campos obrigatórios
-    if (!this.entrada.idItem || Number(this.entrada.idItem) === 0) {
-      this.mensagemErro = 'Por favor, selecione um produto.';
+    const idItemNum = Number(this.entrada.idItem);
+    const qtdNum = Number(this.entrada.quantidadeEntrada);
+    const valorNum = Number(this.entrada.valorUnitarioEntrada);
+
+    if (!idItemNum || idItemNum === 0) {
+      this.mensagemErro = 'Por favor, selecione um produto válido.';
       return;
     }
-    if (!this.entrada.quantidadeEntrada || this.entrada.quantidadeEntrada <= 0) {
-      this.mensagemErro = 'A quantidade recebida deve ser maior que zero.';
+    if (!qtdNum || qtdNum <= 0) {
+      this.mensagemErro = 'A quantidade deve ser maior que zero.';
       return;
     }
-    if (!this.entrada.valorUnitarioEntrada || this.entrada.valorUnitarioEntrada <= 0) {
-      this.mensagemErro = 'O valor unitário de custo deve ser maior que zero.';
+    if (!valorNum || valorNum <= 0) {
+      this.mensagemErro = 'O valor unitário deve ser maior que zero.';
       return;
     }
+
+    // 1. Ativa a trava visual no botão
+    this.enviando = true;
 
     const payload: EntradaProduto = {
       ...this.entrada,
-      idItem: Number(this.entrada.idItem),
-      quantidadeEntrada: Number(this.entrada.quantidadeEntrada),
-      valorUnitarioEntrada: Number(this.entrada.valorUnitarioEntrada)
+      idItem: idItemNum,
+      quantidadeEntrada: qtdNum,
+      valorUnitarioEntrada: valorNum
     };
 
+    // 2. Atualiza o estoque local no serviço centralizado (persistido via localStorage)
+    this.cadastroItensService.atualizarEstoqueProduto(idItemNum, qtdNum);
+
+    // 3. Atualiza a interface e limpa o formulário imediatamente
+    this.historicoEntradas.unshift(payload);
+    this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado com sucesso!';
+    this.limparFormulario();
+    this.enviando = false; // Liberado imediatamente!
+
+    // 4. Envia para a API em segundo plano (sem travar a tela)
     this.entradaService.registrarEntrada(payload).subscribe({
-      next: () => {
-        this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado!';
-        this.limparFormulario();
-        this.carregarHistorico();
-      },
-      error: (err: any) => {
-        console.error('Erro ao enviar para API:', err);
-        this.mensagemSucesso = 'Entrada registrada com sucesso (modo local)!';
-        this.limparFormulario();
-      }
+      next: () => console.log('Sincronizado com o backend com sucesso!'),
+      error: (err: any) => console.warn('Backend indisponível. Mantido no estoque local.', err)
     });
   }
 
+  private finalizarSucesso(payload: EntradaProduto): void {
+    this.historicoEntradas.unshift(payload);
+    this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado com sucesso!';
+    this.limparFormulario();
+    this.enviando = false; // Desbloqueia o botão imediatamente
+  }
+
   limparFormulario(): void {
+    this.produtoSelecionado = undefined;
     this.entrada = {
       idItem: 0,
       dataEntradaProduto: new Date().toISOString().split('T')[0],

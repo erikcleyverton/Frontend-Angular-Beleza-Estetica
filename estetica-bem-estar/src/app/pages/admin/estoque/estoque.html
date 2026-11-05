@@ -1,24 +1,26 @@
-<div id="div-form">
+<section class="container-estoque">
   <h2>Consulta de Estoque</h2>
 
-  <div id="form-cliente">
-    <label>PESQUISAR PRODUTO</label>
+  <div class="box-pesquisa">
+    <label for="termoBusca">PESQUISAR PRODUTO</label>
     <input 
       type="text" 
+      id="termoBusca" 
       [(ngModel)]="termoBusca" 
-      (ngModelChange)="filtrarEstoque()" 
-      placeholder="Digite o nome ou ID..."
+      (ngModelChange)="filtrarProdutos()" 
+      placeholder="Digite o nome ou ID..." 
+      class="input-busca"
     />
   </div>
 
-  <div id="div-btns">
-    <button id="BtnLimpar" *ngIf="termoBusca" (click)="limparFiltro()">Limpar Filtro</button>
-    <button id="BtnVoltar" (click)="voltarHome()">Voltar ao Menu</button>
+  <div class="div-btns">
+    <button type="button" class="btn-limpar" (click)="limparFiltro()">Limpar Filtro</button>
+    <button type="button" class="btn-voltar" (click)="voltarMenu()">Voltar ao Menu</button>
   </div>
 
-  <div class="section-title">Itens em Estoque</div>
+  <h3>Itens em Estoque</h3>
 
-  <table class="admin-table" *ngIf="estoqueFiltrado.length > 0">
+  <table class="tabela-estoque" *ngIf="itensFiltrados.length > 0; else semEstoque">
     <thead>
       <tr>
         <th>ID</th>
@@ -30,26 +32,20 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of estoqueFiltrado">
-        <td>{{ item.idItem }}</td>
-        <td>{{ item.item || item.nomeItem }}</td>
-        <td>
-          <span [class.qtd-baixa]="(item.quantidadeEstoque || 0) <= 5">
-            {{ item.quantidadeEstoque || 0 }}
-          </span>
-        </td>
-        <td>{{ item.unidade || 'UN' }}</td>
-        <td>{{ (item.precoVenda || 0) | currency:'BRL':'symbol':'1.2-2' }}</td>
-        <td>
-          <strong [style.color]="(item.quantidadeEstoque || 0) > 0 ? '#2e7d32' : '#d9534f'">
-            {{ (item.quantidadeEstoque || 0) > 0 ? 'Em Estoque' : 'Sem Estoque' }}
-          </strong>
+      <tr *ngFor="let item of itensFiltrados">
+        <td>{{ item.id }}</td>
+        <td>{{ item.produto }}</td>
+        <td [style.color]="item.qtdAtual > 0 ? 'green' : 'red'">{{ item.qtdAtual }}</td>
+        <td>{{ item.unidade }}</td>
+        <td>R$ {{ item.precoVenda | number:'1.2-2' }}</td>
+        <td [style.color]="item.qtdAtual > 0 ? 'green' : 'red'">
+          <strong>{{ item.situacao }}</strong>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div *ngIf="estoqueFiltrado.length === 0" class="empty-message">
-    Nenhum item encontrado no estoque.
-  </div>
-</div>
+  <ng-template #semEstoque>
+    <p class="empty-message">Nenhum produto encontrado com o filtro inserido.</p>
+  </ng-template>
+</section>

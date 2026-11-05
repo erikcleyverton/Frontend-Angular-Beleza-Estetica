@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CadastroItensService } from '../../../services/cadastro.itens.service';
+import { Subscription } from 'rxjs';
+import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
 
 @Component({
   selector: 'app-cadastro-item',
@@ -11,16 +12,17 @@ import { CadastroItensService } from '../../../services/cadastro.itens.service';
   templateUrl: './cadastro-item.html',
   styleUrl: './cadastro-item.css'
 })
-export class CadastroItemComponent implements OnInit {
-
-  idItem = 0;
-  nomeItem = '';
-  tipoItem = 'P';
-  preco = 0;
-  descricao = '';
+export class CadastroItemComponent implements OnInit, OnDestroy {
+  nomeItem: string = '';
+  tipoItem: 'P' | 'S' = 'P';
+  preco: number | null = null;
+  descricao: string = '';
   filtroTipo: 'P' | 'S' = 'P';
 
-  itens: any[] = [];
+  todosOsItens: ItemSistema[] = [];
+  itensFiltrados: ItemSistema[] = [];
+
+  private subItens?: Subscription;
 
   constructor(
     private cadastroItensService: CadastroItensService,
@@ -28,81 +30,67 @@ export class CadastroItemComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.carregarItens();
-  }
-
-  carregarItens(): void {
-    this.cadastroItensService.obterItens().subscribe({
-      next: (dados: any[]) => {
-        this.itens = dados;
-      },
-      error: (err: any) => console.error('Erro ao carregar itens:', err)
-    });
-  }
-
-  salvarItem(): void {
-    if (!this.nomeItem.trim() || this.preco <= 0) {
-      alert('Preencha o nome do item e um preço válido!');
-      return;
-    }
-
-    // Payload correspondente à estrutura do ProdutoDTO / ItemDTO[cite: 14]
-    const payload = {
-      // DADOS TABELA ITEM[cite: 14]
-      idCategoria: 1,
-      item: this.nomeItem.trim(),
-      descricaoItem: this.descricao ? this.descricao.trim() : '',
-      preco: Number(this.preco),
-      tipoItem: this.tipoItem, 
-      ativoProdutoServico: 'S',
-
-      // DADOS TABELA PRODUTO[cite: 14]
-      codigoPreco: this.tipoItem === 'P' ? 1 : null,
-      precoVenda: Number(this.preco),
-      unidade: this.tipoItem === 'P' ? 'UN' : ''
-    };
-
-    console.log('Dados enviados ao backend:', JSON.stringify(payload));
-
-    this.cadastroItensService.cadastrarItem(payload as any).subscribe({
-      next: () => {
-        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} cadastrado com sucesso!`);
-        this.limparFormulario();
-        this.carregarItens();
-      },
-      error: (err: any) => {
-        console.error('Erro vindo do backend:', err.error);
-        const detalheErro = JSON.stringify(err.error);
-        console.log('Detalhe serializado:', detalheErro);
-
-        const mensagemBackend = err.error?.detalhe || err.error?.erro || err.error?.mensagem || 'Erro interno no servidor.';
-        alert(`Falha no cadastro: ${mensagemBackend}`);
+    this.subItens = this.cadastroItensService.obterItens().subscribe({
+      next: (itens) => {
+        this.todosOsItens = itens;
+        this.filtrarTabela();
       }
     });
   }
 
-  get itensFiltrados(): any[] {
-    return this.itens.filter(item => {
-      const tipo = item.tipoItem || item.tipo_item || 'P';
-      return tipo === this.filtroTipo;
-    });
+  ngOnDestroy(): void {
+    this.subItens?.unsubscribe();
   }
 
   alternarTipo(tipo: 'P' | 'S'): void {
     this.filtroTipo = tipo;
     this.tipoItem = tipo;
-    this.limparFormulario(); // Garante formulário limpo ao alternar entre Produto e Serviço
+    this.filtrarTabela();
+  }
+
+  filtrarTabela(): void {
+    this.itensFiltrados = this.todosOsItens.filter(
+      item => item.tipoItem === this.filtroTipo || (this.filtroTipo === 'P' ? item.tipo === 'produto' : item.tipo === 'servico')
+    );
+  }
+
+  salvarItem(): void {
+    if (!this.nomeItem.trim()) {
+      alert('Por favor, preencha o nome!');
+      return;
+    }
+
+    if (!this.preco || this.preco <= 0) {
+      alert('Por favor, insira um preço válido!');
+      return;
+    }
+
+    const payload = {
+      nomeItem: this.nomeItem,
+      tipoItem: this.tipoItem,
+      preco: Number(this.preco),
+      descricao: this.descricao
+    };
+
+    this.cadastroItensService.cadastrarItem(payload).subscribe({
+      next: (itemCadastrado) => {
+        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} "${itemCadastrado.nome}" cadastrado com sucesso!`);
+        this.limparFormulario();
+      },
+      error: (err) => {
+        console.error('Erro ao cadastrar:', err);
+        alert('Erro ao salvar item.');
+      }
+    });
   }
 
   limparFormulario(): void {
-    this.idItem = 0;
     this.nomeItem = '';
-    this.tipoItem = this.filtroTipo; // Mantém o tipo da aba ativa
-    this.preco = 0;
+    this.preco = null;
     this.descricao = '';
   }
 
   voltarHome(): void {
-    this.router.navigate(['/home']);
+    this.router.navigate(['/catalogo']);
   }
 }

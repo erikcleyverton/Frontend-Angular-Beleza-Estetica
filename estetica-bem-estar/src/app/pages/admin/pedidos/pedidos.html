@@ -1,71 +1,151 @@
-<div class="admin-container">
-  <h2>Gestão de Pedidos em Aberto</h2>
+<section class="container-pedidos">
+  <h2>Gerenciamento de Pedidos em Aberto / Atendimentos</h2>
 
-  <!-- Filtro por Status -->
-  <div class="filter-section">
-    <label for="filtroStatus">Filtrar Status:</label>
-    <select id="filtroStatus" [(ngModel)]="filtroStatus" (change)="aplicarFiltro()">
-      <option value="">Todos</option>
-      <option value="A">Em Aberto</option>
-      <option value="Em Processamento">Em Processamento</option>
-      <option value="Concluído">Concluído</option>
-      <option value="Cancelado">Cancelado</option>
-    </select>
+  <div *ngIf="mensagemSucesso" class="alert alert-sucesso">
+    {{ mensagemSucesso }}
   </div>
 
-  <!-- Tabela de Pedidos -->
-  <table class="admin-table" *ngIf="pedidosFiltrados.length > 0; else semPedidos">
-    <thead>
-      <tr>
-        <th>Nº Pedido</th>
-        <th>Cliente</th>
-        <th>Data</th>
-        <th>Valor Total</th>
-        <th>Status</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let p of pedidosFiltrados">
-        <td>#{{ p.idAtendimento || p.idatendimento }}</td>
-        <td>{{ p.nomeCliente || p.cliente || 'Cliente' }}</td>
-        <td>{{ (p.dataAtendimento || p.data_atendimento) | date:'dd/MM/yyyy' }}</td>
-        <td>{{ (p.valorTotal || p.valorunitario_entrada) | currency:'BRL' }}</td>
-        <td>
-          <span class="status-badge">
-            {{ p.statusAtendimento === 'A' ? 'Em Aberto' : p.statusAtendimento }}
-          </span>
-        </td>
-        <td>
-          <button type="button" class="btn-action" (click)="verDetalhes(p.idAtendimento || p.idatendimento)">Detalhes</button>
-          <button type="button" class="btn-action success" (click)="alterarStatus(p.idAtendimento || p.idatendimento, 'Concluído')">Concluir</button>
-          <button type="button" class="btn-action danger" (click)="alterarStatus(p.idAtendimento || p.idatendimento, 'Cancelado')">Cancelar</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Filtro por Situação + Botão Voltar (RF14, RF23) -->
+  <div class="card-filtro">
+    <div class="grupo-select">
+      <label for="filtroStatus">Filtrar por Situação:</label>
+      <select id="filtroStatus" [(ngModel)]="filtroStatus" (change)="aplicarFiltros()" class="form-control">
+        <option value="">Todos os Pedidos</option>
+        <option value="Aberto">Pedidos em Aberto</option>
+        <option value="Em Processamento">Em Processamento</option>
+        <option value="Concluído">Concluídos</option>
+        <option value="Cancelado">Cancelados</option>
+      </select>
+    </div>
 
-  <ng-template #semPedidos>
-    <p class="no-data">Nenhum pedido encontrado com o filtro selecionado.</p>
-  </ng-template>
-
-  <!-- Modal / Painel de Detalhes -->
-  <div class="detalhes-container" *ngIf="pedidoSelecionado">
-    <h3>Detalhes do Pedido #{{ pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento }}</h3>
-    <p><strong>Cliente:</strong> {{ pedidoSelecionado.nomeCliente || pedidoSelecionado.cliente }}</p>
-
-    <h4>Itens do Atendimento:</h4>
-    <ul>
-      <li *ngFor="let item of pedidoSelecionado.itens || [pedidoSelecionado]">
-        {{ item.quantidade || item.quantidade_itens || 1 }}x {{ item.nomeItem || item.item_descricao || 'Serviço/Produto' }} - {{ (item.valorUnitario || item.valorunitario_entrada) | currency:'BRL' }}
-        <span *ngIf="item.funcionarioNome || item.funcionario">(Atendido por: {{ item.funcionarioNome || item.funcionario }})</span>
-      </li>
-    </ul>
-
-    <button type="button" (click)="pedidoSelecionado = null">Fechar Detalhes</button>
+    <button type="button" class="btn-voltar" (click)="voltarHome()">Voltar</button>
   </div>
 
-  <div class="form-buttons">
-    <button type="button" id="BtnVoltar" (click)="voltarHome()">Voltar</button>
+  <!-- Tabela Principal de Pedidos (RF13) -->
+  <div class="tabela-container">
+    <table class="tabela-pedidos">
+      <thead>
+        <tr>
+          <th>Nº Pedido</th>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th>Valor Total</th>
+          <th>Situação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pedidosFiltrados">
+          <td><strong>#{{ p.idAtendimento || p.idatendimento || p.id }}</strong></td>
+          <td>{{ obterNomeCliente(p) }}</td>
+          <td>{{ (p.dataAtendimento || p.data_atendimento) | date:'dd/MM/yyyy' }}</td>
+          <td><strong>R$ {{ calcularValorTotal(p) | number:'1.2-2' }}</strong></td>
+          <td>
+            <span class="badge" [ngClass]="'badge-' + normalizarStatus(p.statusAtendimento || p.status).toLowerCase().replace(' ', '-')">
+              {{ normalizarStatus(p.statusAtendimento || p.status) }}
+            </span>
+          </td>
+          <td>
+            <button class="btn-detalhes" (click)="verDetalhes(p.idAtendimento || p.idatendimento || p.id)">
+              Ver Detalhes
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="pedidosFiltrados.length === 0">
+          <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">
+            Nenhum pedido encontrado.
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-</div>
+
+  <!-- MODAL DETALHE DO PEDIDO (8.2.5) -->
+  <div class="modal-overlay" *ngIf="pedidoSelecionado">
+    <div class="modal-conteudo">
+      <div class="modal-header">
+        <h3>Detalhes do Pedido #{{ pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento || pedidoSelecionado.id }}</h3>
+        <button class="btn-fechar" (click)="fecharDetalhes()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="grid-info">
+          <p><strong>Cliente:</strong> {{ obterNomeCliente(pedidoSelecionado) }}</p>
+          <p><strong>Data:</strong> {{ (pedidoSelecionado.dataAtendimento || pedidoSelecionado.data_atendimento) | date:'dd/MM/yyyy' }}</p>
+          <p><strong>Valor Total:</strong> R$ {{ calcularValorTotal(pedidoSelecionado) | number:'1.2-2' }}</p>
+          <p>
+            <strong>Status Atual:</strong> 
+            <span class="badge" [ngClass]="'badge-' + normalizarStatus(pedidoSelecionado.statusAtendimento || pedidoSelecionado.status).toLowerCase().replace(' ', '-')">
+              {{ normalizarStatus(pedidoSelecionado.statusAtendimento || pedidoSelecionado.status) }}
+            </span>
+          </p>
+        </div>
+
+        <hr />
+
+        <h4>Itens do Atendimento & Funcionários Responsáveis</h4>
+        <table class="tabela-itens">
+          <thead>
+            <tr>
+              <th>Item / Serviço / Produto</th>
+              <th>Qtd</th>
+              <th>Valor Unit.</th>
+              <th>Subtotal</th>
+              <th>Funcionário</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of (pedidoSelecionado.itens || pedidoSelecionado.atendimentoItens || pedidoSelecionado.itensAtendimento || [])">
+              <td><strong>{{ obterNomeItem(item) }}</strong></td>
+              <td>{{ item.quantidade || item.qtd || 1 }}</td>
+              <td>R$ {{ (item.valorUnitario || item.preco || item.precoUnitario || 0) | number:'1.2-2' }}</td>
+              <td>R$ {{ ((item.quantidade || item.qtd || 1) * (item.valorUnitario || item.preco || item.precoUnitario || 0)) | number:'1.2-2' }}</td>
+              <td>
+                <span *ngIf="item.nomeFuncionario || item.funcionarioNome || item.funcionario || item.nome_funcionario">
+                  {{ item.nomeFuncionario || item.funcionarioNome || item.funcionario || item.nome_funcionario }} 
+                  <small *ngIf="item.cargo || item.cargoFuncionario">({{ item.cargo || item.cargoFuncionario }})</small>
+                </span>
+                <span *ngIf="!item.nomeFuncionario && !item.funcionarioNome && !item.funcionario" style="color: #94a3b8;">Não atribuído</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Alteração de Status (RF15) -->
+        <div class="acoes-status">
+          <label><strong>Alterar Situação do Pedido:</strong></label>
+          <div class="botoes-status">
+            <button 
+              type="button"
+              class="btn-status btn-aberto" 
+              [disabled]="enviando || normalizarStatus(pedidoSelecionado.statusAtendimento) === 'Aberto'" 
+              (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento || pedidoSelecionado.id, 'Aberto')">
+              Aberto
+            </button>
+            <button 
+              type="button"
+              class="btn-status btn-processamento" 
+              [disabled]="enviando || normalizarStatus(pedidoSelecionado.statusAtendimento) === 'Em Processamento'" 
+              (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento || pedidoSelecionado.id, 'Em Processamento')">
+              Em Processamento
+            </button>
+            <button 
+              type="button"
+              class="btn-status btn-concluido" 
+              [disabled]="enviando || normalizarStatus(pedidoSelecionado.statusAtendimento) === 'Concluído'" 
+              (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento || pedidoSelecionado.id, 'Concluído')">
+              Concluir
+            </button>
+            <button 
+              type="button"
+              class="btn-status btn-cancelado" 
+              [disabled]="enviando || normalizarStatus(pedidoSelecionado.statusAtendimento) === 'Cancelado'" 
+              (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.idatendimento || pedidoSelecionado.id, 'Cancelado')">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

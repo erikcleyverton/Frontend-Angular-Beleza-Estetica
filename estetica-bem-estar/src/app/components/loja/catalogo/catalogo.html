@@ -45,17 +45,19 @@
   <div class="catalogo-grid" *ngIf="produtosFiltrados.length > 0">
     <article class="card-produto" *ngFor="let prod of produtosFiltrados">
       <div class="card-media">
-        <img [src]="prod.imagem || 'assets/placeholder.jpg'" [alt]="prod.nome" loading="lazy">
-        <span class="badge-preco">{{ prod.precoUnitario | currency:'BRL':'symbol':'1.2-2' }}</span>
-        <span class="badge-tipo" [ngClass]="prod.tipo">
-          {{ prod.tipo === 'produto' ? 'Produto' : 'Serviço' }}
+        <img [src]="prod.imagem || 'assets/placeholder.jpg'" [alt]="prod.nome || prod.nomeItem || prod.item" loading="lazy">
+        <span class="badge-preco">
+          R$ {{ (prod.precoUnitario || prod.preco || prod.valorUnitario || 0) | number:'1.2-2' }}
+        </span>
+        <span class="badge-tipo" [ngClass]="prod.tipo || (prod.tipoItem === 'S' ? 'servico' : 'produto')">
+          {{ (prod.tipo === 'servico' || prod.tipoItem === 'S') ? 'Serviço' : 'Produto' }}
         </span>
       </div>
       <div class="card-detalhes">
-        <h3 class="produto-titulo">{{ prod.nome }}</h3>
-        <p class="produto-descricao">{{ prod.descricao }}</p>
+        <h3 class="produto-titulo">{{ prod.nome || prod.nomeItem || prod.item }}</h3>
+        <p class="produto-descricao">{{ prod.descricao || 'Sem descrição.' }}</p>
         <div class="card-acoes">
-          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(prod.id)">Ver detalhes</button>
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(prod.id || prod.idItem)">Ver detalhes</button>
           <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(prod)">Adicionar</button>
         </div>
       </div>

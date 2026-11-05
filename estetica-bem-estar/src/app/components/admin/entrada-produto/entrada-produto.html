@@ -1,11 +1,7 @@
-<section class="container-entrada">
-  <header class="entrada-header">
-    <span class="tag-categoria">GESTÃO DE ESTOQUE</span>
-    <h2>Entrada de Produtos</h2>
-    <p>Cadastre as mercadorias recebidas para atualizar o estoque (RF16 & RF17)</p>
-  </header>
+<section class="container-estoque container-reduzido">
+  <h2>Entrada de Produtos</h2>
 
-  <!-- Mensagens de Sucesso ou Erro (RF20) -->
+  <!-- Mensagens de Feedback -->
   <div *ngIf="mensagemSucesso" class="alert alert-sucesso">
     {{ mensagemSucesso }}
   </div>
@@ -15,20 +11,24 @@
 
   <form (ngSubmit)="registrarEntrada()" class="form-entrada">
     
-    <!-- Seleção do Produto -->
     <div class="form-group">
-      <label for="idItem">Produto *</label>
-      <select id="idItem" [(ngModel)]="entrada.idItem" name="idItem" class="form-control" required>
-        <option [value]="0" disabled>Selecione o produto...</option>
+      <label for="idItem">PRODUTO *</label>
+      <select 
+        id="idItem" 
+        [(ngModel)]="entrada.idItem" 
+        name="idItem" 
+        (change)="aoSelecionarProduto()" 
+        class="form-control" 
+        required>
+        <option [value]="0" disabled>-- Selecione um Produto --</option>
         <option *ngFor="let prod of produtosDisponiveis" [value]="prod.idItem || prod.id">
           ID {{ prod.idItem || prod.id }} - {{ prod.nomeItem || prod.nome }}
         </option>
       </select>
     </div>
 
-    <!-- Quantidade -->
     <div class="form-group">
-      <label for="quantidadeEntrada">Quantidade Recebida *</label>
+      <label for="quantidadeEntrada">QUANTIDADE RECEBIDA *</label>
       <input 
         type="number" 
         id="quantidadeEntrada" 
@@ -40,9 +40,8 @@
       />
     </div>
 
-    <!-- Unidade -->
     <div class="form-group">
-      <label for="unidade">Unidade de Medida *</label>
+      <label for="unidade">UNIDADE DE MEDIDA *</label>
       <select id="unidade" [(ngModel)]="entrada.unidade" name="unidade" class="form-control" required>
         <option value="UN">UN - Unidade</option>
         <option value="CX">CX - Caixa</option>
@@ -51,9 +50,10 @@
       </select>
     </div>
 
-    <!-- Valor Unitário -->
     <div class="form-group">
-      <label for="valorUnitarioEntrada">Valor Unitário de Custo (R$) *</label>
+      <label for="valorUnitarioEntrada">
+        VALOR UNITÁRIO DE CUSTO (R$) *
+      </label>
       <input 
         type="number" 
         id="valorUnitarioEntrada" 
@@ -67,9 +67,8 @@
       />
     </div>
 
-    <!-- Data -->
     <div class="form-group">
-      <label for="dataEntradaProduto">Data da Entrada *</label>
+      <label for="dataEntradaProduto">DATA DA ENTRADA *</label>
       <input 
         type="date" 
         id="dataEntradaProduto" 
@@ -80,10 +79,38 @@
       />
     </div>
 
-    <!-- Botões -->
-    <div class="form-acoes">
+    <!-- BOTÕES: O botão bloqueia de verdade quando 'enviando' for true -->
+    <div class="div-btns">
       <button type="button" class="btn-voltar" (click)="voltar()">Voltar</button>
-      <button type="submit" class="btn-salvar">Confirmar Entrada</button>
+      <button type="submit" class="btn-salvar" [disabled]="enviando">
+        {{ enviando ? 'Gravando...' : 'Confirmar Entrada' }}
+      </button>
     </div>
   </form>
+
+  <!-- Histórico Recente -->
+  <div class="box-historico" *ngIf="historicoEntradas.length > 0">
+    <h3 class="section-title">Histórico de Entradas</h3>
+
+    <table class="tabela-estoque">
+      <thead>
+        <tr>
+          <th>ID Item</th>
+          <th>Data</th>
+          <th>Qtd. Entrada</th>
+          <th>Unidade</th>
+          <th>Custo Unit.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historicoEntradas">
+          <td>{{ h.idItem }}</td>
+          <td>{{ h.dataEntradaProduto }}</td>
+          <td style="color: green; font-weight: bold;">+{{ h.quantidadeEntrada }}</td>
+          <td>{{ h.unidade }}</td>
+          <td>R$ {{ h.valorUnitarioEntrada | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </section>
