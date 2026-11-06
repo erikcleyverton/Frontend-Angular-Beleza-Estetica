@@ -6,6 +6,11 @@ import { Subscription } from 'rxjs';
 import { CarrinhoService } from '../../../services/carrinho.service';
 import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
 
+export interface CategoriaLocal {
+  idCategoria: number;
+  categoria: string;
+}
+
 @Component({
   selector: 'app-catalogo',
   standalone: true,
@@ -16,9 +21,18 @@ import { CadastroItensService, ItemSistema } from '../../../services/cadastro.it
 export class CatalogoComponent implements OnInit, OnDestroy {
   termoBusca: string = '';
   filtroTipo: string = 'todos';
+  categoriaSelecionada: number | string = 'TODAS';
 
   produtosFixos: ItemSistema[] = [];
   produtosFiltrados: ItemSistema[] = [];
+
+  categorias: CategoriaLocal[] = [
+    { idCategoria: 1, categoria: 'Tratamentos Faciais' },
+    { idCategoria: 2, categoria: 'Massagens & Corporal' },
+    { idCategoria: 3, categoria: 'Cabelo & Capilar' },
+    { idCategoria: 4, categoria: 'Estética Geral' }
+  ];
+
   private subItens?: Subscription;
 
   constructor(
@@ -28,7 +42,6 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Inscreve-se no serviço centralizado para receber produtos e serviços
     this.subItens = this.cadastroItensService.obterItens().subscribe({
       next: (itens: ItemSistema[]) => {
         this.produtosFixos = itens || [];
@@ -44,19 +57,28 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.subItens?.unsubscribe();
   }
 
+  obterTipoNormalizado(prod: any): 'servico' | 'produto' {
+    if (!prod) return 'produto';
+    const t = String(prod.tipo || prod.tipoItem || prod.tipo_item || '').toLowerCase();
+    return (t === 's' || t === 'servico' || t === 'serviço') ? 'servico' : 'produto';
+  }
+
   filtrarProdutos(): void {
     const busca = this.termoBusca.toLowerCase().trim();
 
     this.produtosFiltrados = this.produtosFixos.filter(prod => {
-      const nomeOuId = (prod.nome || prod.nomeItem || prod.item || '').toLowerCase();
-      const idStr = (prod.id || prod.idItem || '').toString();
+      const pAny = prod as any;
+      const nomeOuId = (prod.nome || prod.nomeItem || pAny.item || '').toLowerCase();
+      const idStr = (prod.id || prod.idItem || pAny.iditem || '').toString();
       
-      const tipoNormalizado = prod.tipo === 'servico' || prod.tipoItem === 'S' ? 'servico' : 'produto';
+      const tipoNormalizado = this.obterTipoNormalizado(prod);
+      const idCatItem = Number(pAny.idCategoria || pAny.idcategoria || prod.categoria);
 
       const atendeTexto = !busca || nomeOuId.includes(busca) || idStr.includes(busca);
       const atendeTipo = this.filtroTipo === 'todos' || tipoNormalizado === this.filtroTipo;
+      const atendeCategoria = this.categoriaSelecionada === 'TODAS' || idCatItem === Number(this.categoriaSelecionada);
 
-      return atendeTexto && atendeTipo;
+      return atendeTexto && atendeTipo && atendeCategoria;
     });
   }
 
@@ -68,6 +90,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   limparFiltro(): void {
     this.termoBusca = '';
     this.filtroTipo = 'todos';
+    this.categoriaSelecionada = 'TODAS';
     this.filtrarProdutos();
   }
 
@@ -76,18 +99,23 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   adicionarAoCarrinho(produto: ItemSistema): void {
-    const nome = produto.nome || produto.nomeItem || produto.item || 'Item';
-    const preco = Number(produto.precoUnitario || produto.preco || produto.valorUnitario || 0);
+    const pAny = produto as any;
+    const nome = pAny.item || produto.nome || produto.nomeItem || 'Item';
+    const preco = Number(produto.precoUnitario || produto.preco || pAny.valorUnitario || 0);
+    const idValido = Number(produto.id || produto.idItem || pAny.iditem);
+    const tipoNormalizado = this.obterTipoNormalizado(produto);
 
     this.carrinhoService.adicionarItem({
-      id: Number(produto.id || produto.idItem),
+      id: idValido,
       nome: nome,
       precoUnitario: preco,
+      tipo: tipoNormalizado,
+      tipoItem: tipoNormalizado === 'servico' ? 'S' : 'P',
       categoria: produto.categoria || 'Geral',
       imagem: produto.imagem || 'assets/placeholder.jpg'
     });
 
-    alert(`${nome} foi adicionado ao carrinho!`);
+    alert(`"${nome}" foi adicionado ao carrinho!`);
   }
 
   voltar(): void { this.router.navigate(['/home']); }

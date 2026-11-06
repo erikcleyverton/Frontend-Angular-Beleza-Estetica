@@ -260,3 +260,33 @@
 .btn-voltar-topo:hover {
   background-color: #f0f0f0;
 }
+
+.campo-profissional-carrinho {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-profissional-carrinho label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.select-profissional {
+  width: 100%;
+  max-width: 240px;
+  height: 34px;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: #f8fafc;
+  outline: none;
+}
+
+.select-profissional:focus {
+  border-color: #000000;
+  background-color: #ffffff;
+}

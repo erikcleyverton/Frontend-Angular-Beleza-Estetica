@@ -1,147 +1,121 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface ItemCarrinho {
   id: number;
   nome: string;
-  categoria?: string;
   precoUnitario: number;
   quantidade: number;
+  tipo?: string;
+  tipoItem?: string;
+  categoria?: string;
   imagem?: string;
+  idFuncionarioSelecionado?: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class CarrinhoService {
-  private key = 'carrinho';
-  private usuarioKey = 'usuario_logado'; // Chave onde os dados do usuário autenticado ficam salvos
-  private itens: ItemCarrinho[] = [];
-  
-  // Subject para emitir atualizações reativas para os componentes
   private itensSubject = new BehaviorSubject<ItemCarrinho[]>([]);
-  public itens$ = this.itensSubject.asObservable();
+  itens$ = this.itensSubject.asObservable();
 
-  private readonly apiUrl = 'https://localhost:7077/api/Atendimento'; 
+  private readonly apiUrlAtendimento = 'https://localhost:7077/api/Atendimento';
 
-  constructor(private http: HttpClient) {
-    this.carregarDoLocalStorage();
+  // IDs válidos cadastrados na tabela pessoa do teu MySQL
+  private readonly idsClientesValidos: number[] = [1, 2, 3, 5, 6, 11, 12, 13, 14, 15, 16, 17];
+
+  constructor(private http: HttpClient) {}
+
+  obterTotal(): number {
+    return this.itensSubject.getValue().reduce((acc, item) => acc + (item.precoUnitario * item.quantidade), 0);
   }
 
-  private carregarDoLocalStorage(): void {
-    const salvo = localStorage.getItem(this.key);
-    if (salvo) {
-      try {
-        this.itens = JSON.parse(salvo);
-      } catch (e) {
-        this.itens = [];
-      }
-    }
-    this.atualizarEstado();
-  }
+  adicionarItem(item: Omit<ItemCarrinho, 'quantidade'>): void {
+    const atuais = this.itensSubject.getValue();
+    const index = atuais.findIndex(i => i.id === item.id);
 
-  private atualizarEstado(): void {
-    localStorage.setItem(this.key, JSON.stringify(this.itens));
-    this.itensSubject.next([...this.itens]);
-  }
-
-  /**
-   * Obtém o idPessoa dinamicamente do utilizador logado no localStorage.
-   * Retorna 1 (Carly Rae Jepsen) como fallback de segurança caso não haja login[cite: 3].
-   */
-  obterIdPessoaLogada(): number {
-    const usuarioSalvo = localStorage.getItem(this.usuarioKey);
-    if (usuarioSalvo) {
-      try {
-        const usuario = JSON.parse(usuarioSalvo);
-        return usuario.idPessoa || usuario.id || 1;
-      } catch (e) {
-        console.error('Erro ao converter usuario_logado do localStorage:', e);
-      }
-    }
-    return 1; // Fallback padronizado[cite: 3]
-  }
-
-  obterItens(): ItemCarrinho[] {
-    return this.itens;
-  }
-
-  adicionarItem(itemNovo: Omit<ItemCarrinho, 'quantidade'>): void {
-    if (!itemNovo.id) {
-      console.error('Tentativa de adicionar item sem ID:', itemNovo);
-      return;
-    }
-
-    // Compara por ID e por Nome para evitar agrupar serviços diferentes com o mesmo idBanco
-    const itemExistente = this.itens.find(i => i.id === itemNovo.id && i.nome === itemNovo.nome);
-    if (itemExistente) {
-      itemExistente.quantidade++;
+    if (index > -1) {
+      atuais[index].quantidade += 1;
+      this.itensSubject.next([...atuais]);
     } else {
-      this.itens.push({ ...itemNovo, quantidade: 1 });
+      this.itensSubject.next([...atuais, { ...item, quantidade: 1 }]);
     }
-    this.atualizarEstado();
   }
 
   aumentarQtd(id: number): void {
-    const item = this.itens.find(i => i.id === id);
+    const atuais = this.itensSubject.getValue();
+    const item = atuais.find(i => i.id === id);
     if (item) {
-      item.quantidade++;
-      this.atualizarEstado();
+      item.quantidade += 1;
+      this.itensSubject.next([...atuais]);
     }
   }
 
   diminuirQtd(id: number): void {
-    const item = this.itens.find(i => i.id === id);
-    if (item) {
-      item.quantidade--;
-      if (item.quantidade <= 0) {
-        this.removerItem(id);
-        return;
+    const atuais = this.itensSubject.getValue();
+    const index = atuais.findIndex(i => i.id === id);
+    if (index > -1) {
+      if (atuais[index].quantidade > 1) {
+        atuais[index].quantidade -= 1;
+      } else {
+        atuais.splice(index, 1);
       }
-      this.atualizarEstado();
+      this.itensSubject.next([...atuais]);
     }
   }
 
   removerItem(id: number): void {
-    this.itens = this.itens.filter(i => i.id !== id);
-    this.atualizarEstado();
-  }
-
-  obterTotal(): number {
-    return this.itens.reduce((total, item) => total + (item.precoUnitario * item.quantidade), 0);
+    const atuais = this.itensSubject.getValue().filter(i => i.id !== id);
+    this.itensSubject.next(atuais);
   }
 
   limparCarrinho(): void {
-    this.itens = [];
-    localStorage.removeItem(this.key);
-    this.atualizarEstado();
+    this.itensSubject.next([]);
+  }
+
+  obterIdClienteAleatorio(): number {
+    const indiceSorteado = Math.floor(Math.random() * this.idsClientesValidos.length);
+    return this.idsClientesValidos[indiceSorteado];
   }
 
   /**
-   * Finaliza o agendamento na API ASP.NET Core.
-   * Se um idPessoa for fornecido explicitamente, ele será usado.
-   * Caso contrário, busca dinamicamente o cliente autenticado via `obterIdPessoaLogada()`.
+   * Finaliza o agendamento no exato formato esperado pelo AtendimentoPostDTO do C#
    */
-  finalizarAgendamentoAPI(idPessoa?: number): Observable<any> {
-    const agora = new Date();
-    const dataFormatada = agora.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  finalizarAgendamentoAPI(idClienteParam?: number): Observable<any> {
+  const itensCarrinho = this.itensSubject.getValue();
 
-    const idClienteFinal = idPessoa || this.obterIdPessoaLogada();
+  const idClienteFinal = (idClienteParam && idClienteParam > 0) 
+    ? idClienteParam 
+    : this.obterIdClienteAleatorio();
 
-    const payload = {
-      idPessoa: idClienteFinal,
-      dataAtendimento: dataFormatada,
-      statusAtendimento: 'A',
-      valorTotal: this.obterTotal(),
-      itens: this.itens.map(item => ({
-        idItem: Number(item.id) || 1, // IDs 1 ou 2 aceitos no MySQL[cite: 6]
-        idFuncionario: 2, // ID 2 é o funcionário no banco (Ethel)[cite: 4]
-        quantidade: item.quantidade,
-        valorUnitario: item.precoUnitario
-      }))
-    };
+  // 1. Data e Hora no formato sem fuso horário (ex: "2026-11-06T00:34:27")
+  const agora = new Date();
+  const dataFormatada = new Date(agora.getTime() - (agora.getTimezoneOffset() * 60000))
+    .toISOString()
+    .slice(0, 19);
 
-    return this.http.post(this.apiUrl, payload);
-  }
+  // 2. Objeto de agendamento alinhado com as propriedades do AtendimentoPostDTO
+  const dadosAgendamento = {
+    idPessoa: idClienteFinal,
+    dataAtendimento: dataFormatada,
+    statusAtendimento: 'Agendado',
+    itens: itensCarrinho.map(item => ({
+      idItem: Number(item.id),
+      idFuncionario: Number((item as any).idFuncionarioSelecionado || (item as any).idFuncionario || 2),
+      quantidade: Number(item.quantidade || 1),
+      valorUnitario: Number(item.precoUnitario || 0)
+    }))
+  };
+
+  // 3. Encapsula na propriedade 'dto' que o C# exige na assinatura [FromBody] AtendimentoPostDTO dto
+  const payload = {
+    dto: dadosAgendamento
+  };
+
+  console.log(`🚀 Criando Agendamento (Cliente ID ${idClienteFinal}):`, payload);
+
+  return this.http.post(this.apiUrlAtendimento, payload);
+}
 }
