@@ -1,106 +1,86 @@
-<section class="carrinho-secao">
-  <header class="carrinho-header">
-    <div class="carrinho-header-topo">
-      <button type="button" class="btn-voltar-topo" (click)="voltarAoCatalogo()">
-        &larr; Voltar
-      </button>
-      <h2>Seu Carrinho de Compras</h2>
-    </div>
-    <p>Revise os tratamentos e produtos selecionados antes de finalizar</p>
-  </header>
+<div class="carrinho-wrapper">
+  
+  <div class="carrinho-header">
+    <button type="button" class="btn-pill-back" (click)="voltarAoCatalogo()">← Continuar a Comprar</button>
+    <h1 class="carrinho-title">Finalizar Pedido</h1>
+    <button type="button" class="btn-clear" *ngIf="itensCarrinho.length > 0" (click)="limparCarrinho()">
+      🗑️ Limpar
+    </button>
+  </div>
 
-  <div class="carrinho-container">
-    <!-- Lista de Itens -->
-    <div class="carrinho-lista">
-      
-      <!-- Mensagem de Carrinho Vazio -->
-      <div *ngIf="itens.length === 0" class="carrinho-vazio">
-        <p>O seu carrinho está vazio no momento.</p>
-        <button type="button" class="btn-continuar" (click)="voltarAoCatalogo()">
-          Ir para o Catálogo
-        </button>
-      </div>
+  <!-- Estado Vazio -->
+  <div class="empty-state" *ngIf="itensCarrinho.length === 0">
+    <div class="empty-icon">🛍️</div>
+    <h3>O seu carrinho está vazio</h3>
+    <p>Adicione produtos ou serviços do catálogo para continuar.</p>
+    <button class="btn-dark" (click)="voltarAoCatalogo()">Explorar Catálogo</button>
+  </div>
 
-      <!-- Iteração Dinâmica de Itens -->
-      <div class="carrinho-item" *ngFor="let item of itens">
-        <div class="item-foto">
-          <img [src]="item.imagem || 'assets/placeholder.png'" [alt]="item.nome || 'Produto'">
-        </div>
-        
-       <div class="item-info">
-  <h3>{{ item.nome }}</h3>
-  <p class="item-categoria">{{ item.categoria || 'Geral' }}</p>
-  <span class="item-preco-unitario">R$ {{ item.precoUnitario | number:'1.2-2' }}</span>
-
-  <!-- SELEÇÃO DE PROFISSIONAL (Exibida para Serviços) -->
-  <div class="campo-profissional-carrinho" *ngIf="eServico(item)" style="margin-top: 10px;">
-    <label [for]="'prof-' + item.id" style="display:block; font-size:11px; font-weight:bold; color:#475569; margin-bottom:4px;">
-      Profissional Responsável *
-    </label>
+  <!-- Conteúdo Principal -->
+  <div class="carrinho-grid" *ngIf="itensCarrinho.length > 0">
     
-    <select 
-      [id]="'prof-' + item.id" 
-      [(ngModel)]="item.idFuncionarioSelecionado" 
-      style="width: 100%; max-width: 250px; height: 36px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background-color: #ffffff; color: #0f172a;"
-      required
-    >
-      <option [ngValue]="undefined">-- Selecione o Profissional --</option>
-      <option *ngFor="let f of funcionarios" [ngValue]="f.idFuncionario">
-        {{ f.nome }} ({{ f.cargo }})
-      </option>
-    </select>
-  </div>
-</div>
-        <div class="item-qtd">
-          <button type="button" class="btn-qtd" (click)="diminuirQtd(item)">-</button>
-          <span>{{ item.quantidade }}</span>
-          <button type="button" class="btn-qtd" (click)="aumentarQtd(item)">+</button>
+    <!-- Lista de Itens -->
+    <div class="itens-section">
+      <div class="section-title">Itens Selecionados ({{ itensCarrinho.length }})</div>
+      
+      <div class="item-card" *ngFor="let item of itensCarrinho">
+        <div class="item-info">
+          <span class="item-type-badge" [class.badge-servico]="item.tipo === 'servico' || item.tipoItem === 'S'">
+            {{ (item.tipo === 'servico' || item.tipoItem === 'S') ? '✨ Serviço' : '📦 Produto' }}
+          </span>
+          <h4 class="item-name">{{ item.nome }}</h4>
+          <span class="item-unit-price">R$ {{ item.precoUnitario | number:'1.2-2' }} un.</span>
         </div>
 
-        <div class="item-subtotal">
-          <span>R$ {{ (item.precoUnitario * item.quantidade) | number:'1.2-2' }}</span>
+        <div class="item-controls">
+          <div class="quantity-picker">
+            <button type="button" (click)="alterarQuantidade(item, -1, $event)">-</button>
+            <span>{{ item.quantidade }}</span>
+            <button type="button" (click)="alterarQuantidade(item, 1, $event)">+</button>
+          </div>
+          <div class="item-subtotal">
+            R$ {{ (item.precoUnitario * item.quantidade) | number:'1.2-2' }}
+          </div>
+          <button class="btn-remove" (click)="removerItem(item.id)" title="Remover item">✖</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumo Lateral -->
+    <div class="summary-section">
+      <div class="summary-card">
+        <h3 class="summary-title">Resumo do Pedido</h3>
+
+        <!-- Exibe APENAS se houver Serviço no carrinho -->
+        <div class="form-group-dynamic" *ngIf="temServicoNoCarrinho">
+          <label>✂️ Profissional / Atendente:</label>
+          <select [(ngModel)]="idFuncionarioSelecionado" class="select-dynamic">
+            <option *ngFor="let f of funcionarios" [value]="f.idpessoa || f.idPessoa || f.id">
+              {{ f.nome || f.nomePessoa }}
+            </option>
+          </select>
         </div>
 
-        <button type="button" class="btn-remover" (click)="removerItem(item)" title="Remover item">
-          &times;
+        <hr class="divider" *ngIf="temServicoNoCarrinho">
+
+        <div class="summary-row">
+          <span>Subtotal Itens:</span>
+          <span>R$ {{ valorTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total Final:</span>
+          <strong>R$ {{ valorTotal | number:'1.2-2' }}</strong>
+        </div>
+
+        <button 
+          class="btn-checkout" 
+          (click)="finalizarAtendimento()" 
+          [disabled]="enviandoAgendamento || carregando">
+          {{ enviandoAgendamento ? 'A Processar...' : 'Confirmar & Finalizar Pedido' }}
         </button>
       </div>
-
-    </div>
-
-    <!-- Resumo do Pedido -->
-    <div class="carrinho-resumo" *ngIf="itens.length > 0">
-      <h3>Resumo do Pedido</h3>
-
-      <div class="resumo-linha">
-        <span>Subtotal</span>
-        <span>R$ {{ total | number:'1.2-2' }}</span>
-      </div>
-
-      <div class="resumo-linha">
-        <span>Desconto</span>
-        <span class="desconto">R$ 0,00</span>
-      </div>
-
-      <div class="resumo-divisor"></div>
-
-      <div class="resumo-linha total">
-        <span>Total</span>
-        <span>R$ {{ total | number:'1.2-2' }}</span>
-      </div>
-
-      <button 
-        type="button" 
-        class="btn-finalizar" 
-        (click)="finalizarAtendimento()" 
-        [disabled]="itens.length === 0 || carregando">
-        {{ carregando ? 'Processando...' : 'Finalizar Agendamento' }}
-      </button>
-      
-      <button type="button" class="btn-continuar" (click)="voltarAoCatalogo()">
-        Continuar Comprando
-      </button>
     </div>
 
   </div>
-</section>
+
+</div>

@@ -1,0 +1,252 @@
+/* Layout Principal Centralizado */
+.container-admin {
+  max-width: 1050px;
+  margin: 30px auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* Header em Grelha (Esquerda, Centro, Direita) */
+.header-admin {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.header-center {
+  text-align: center;
+}
+
+.header-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.title-admin {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Botão Voltar */
+.btn-voltar {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.btn-voltar:hover {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+/* Campo de Busca */
+.search-container {
+  display: flex;
+  margin: 0;
+}
+
+.search-input {
+  width: 240px;
+  padding: 9px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: #000000;
+}
+
+/* Card de Edição */
+.card-edit {
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-edit h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-grid div {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #333333;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.form-grid .input-custom {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-grid .input-custom:focus {
+  border-color: #000000;
+}
+
+.edit-btns {
+  display: flex;
+  gap: 12px;
+}
+
+.edit-btns .btn-salvar {
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.edit-btns .btn-salvar:hover:not(:disabled) {
+  background-color: #222222;
+}
+
+.edit-btns .btn-salvar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-btns .btn-cancelar {
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  color: #333333;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.edit-btns .btn-cancelar:hover {
+  background-color: #e2e2e2;
+}
+
+/* Tabela e Mensagens de Estado */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  text-align: left;
+}
+
+.admin-table th {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 14px;
+  color: #333333;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-acao-edit {
+  background: #f0f0f0;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-acao-edit:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-acao-delete {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-acao-delete:hover {
+  background-color: #fca5a5;
+  color: #991b1b;
+}
+
+.state-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 0;
+  width: 100%;
+  text-align: center;
+  color: #666666;
+  font-size: 14px;
+}

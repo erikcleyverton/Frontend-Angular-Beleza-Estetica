@@ -6,7 +6,6 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ClienteService {
-  
   private readonly apiUrl = 'https://localhost:7077/api/PessoaEndereco';
 
   constructor(private http: HttpClient) {}
@@ -19,13 +18,16 @@ export class ClienteService {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
 
-  // Alterado para 'any' para evitar conflito de tipos com a interface Cliente
   cadastrarCliente(cliente: any): Observable<any> {
     return this.http.post<any>(this.apiUrl, cliente);
   }
 
-  // Alterado para 'any' e usando o idPessoa passado no objeto
   atualizarCliente(cliente: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${cliente.idPessoa}`, cliente);
+  }
+
+  // MÉTODO QUE FALTAVA PARA RESOLVER O TS2339:
+  excluirCliente(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

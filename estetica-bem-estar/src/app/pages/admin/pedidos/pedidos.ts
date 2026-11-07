@@ -25,6 +25,7 @@ export class PedidosComponent implements OnInit {
   
   private catalogoItens: ItemSistema[] = [];
   private readonly apiUrl = 'https://localhost:7077/api/Atendimento';
+  private readonly LOCAL_KEY = 'pedidos_cache_local';
 
   constructor(
     private http: HttpClient,
@@ -45,14 +46,39 @@ export class PedidosComponent implements OnInit {
   }
 
   carregarPedidos(): void {
+    const salvosLocais = localStorage.getItem(this.LOCAL_KEY);
+    const pedidosLocais: any[] = salvosLocais ? JSON.parse(salvosLocais) : [];
+
     this.http.get<any[]>(this.apiUrl).pipe(
       catchError(err => {
-        console.warn('API de Atendimento indisponível. Mantendo estado local.', err);
+        console.warn('API de Atendimento indisponível. Exibindo apenas pedidos locais.', err);
         return of([]);
       })
     ).subscribe({
-      next: (dados) => {
-        this.pedidos = dados || [];
+      next: (dadosApi) => {
+        const listaApi = dadosApi || [];
+        const mapa = new Map<number, any>();
+
+        // Insere primeiro os dados vindos da API
+        listaApi.forEach(p => {
+          const id = Number(p.idAtendimento || p.idatendimento || p.id);
+          if (id) mapa.set(id, p);
+        });
+
+        // Insere ou sobrepõe com os pedidos locais (preservando o status alterado localmente)
+        pedidosLocais.forEach(p => {
+          const id = Number(p.idAtendimento || p.idatendimento || p.id);
+          if (id) {
+            mapa.set(id, p);
+          }
+        });
+
+        this.pedidos = Array.from(mapa.values()).sort((a, b) => {
+          const idA = Number(a.idAtendimento || a.idatendimento || a.id || 0);
+          const idB = Number(b.idAtendimento || b.idatendimento || b.id || 0);
+          return idB - idA;
+        });
+
         this.aplicarFiltros();
       }
     });
@@ -70,12 +96,10 @@ export class PedidosComponent implements OnInit {
     }
   }
 
-  // Alias para retrocompatibilidade no HTML
   aplicarFiltro(): void {
     this.aplicarFiltros();
   }
 
-  /** RF14: Normalização abrangente de status do banco MySQL */
   normalizarStatus(status: string): string {
     if (!status) return 'Aberto';
     const st = status.toString().trim().toUpperCase();
@@ -86,7 +110,6 @@ export class PedidosComponent implements OnInit {
     return status;
   }
 
-  /** Resolve o nome dinâmico do cliente sem fallbacks estáticos */
   obterNomeCliente(pedido: any): string {
     if (!pedido) return 'Cliente Não Identificado';
 
@@ -104,7 +127,42 @@ export class PedidosComponent implements OnInit {
     return idCliente ? `Cliente ID #${idCliente}` : 'Cliente Não Identificado';
   }
 
-  /** Resolve o nome do produto/serviço cruzando com o catálogo por ID */
+  obterNomeFuncionario(objeto: any): string {
+    if (!objeto) return 'Não atribuído';
+
+    const nome = objeto.nomeFuncionario || 
+                 objeto.funcionario || 
+                 objeto.atendente || 
+                 objeto.nome_funcionario || 
+                 objeto.funcionarioNome ||
+                 objeto.profissional;
+
+    if (nome && typeof nome === 'string' && nome.trim() !== '') {
+      return nome;
+    }
+
+    const idFunc = Number(objeto.idFuncionario || objeto.id_funcionario || objeto.idAtendente);
+    
+    const mapaFuncionarios: { [key: number]: string } = {
+      2: 'Ethel',
+      3: 'Fernanda Olivia',
+      6: 'Rafael Ferreira',
+      15: 'Dra. Juliana Mendes',
+      16: 'Dra. Beatriz Lima',
+      17: 'Lucas Barber'
+    };
+
+    if (idFunc > 0 && mapaFuncionarios[idFunc]) {
+      return mapaFuncionarios[idFunc];
+    }
+
+    if (this.pedidoSelecionado && objeto !== this.pedidoSelecionado) {
+      return this.obterNomeFuncionario(this.pedidoSelecionado);
+    }
+
+    return idFunc > 0 ? `Profissional #${idFunc}` : 'Não atribuído';
+  }
+
   obterNomeItem(item: any): string {
     if (!item) return 'Item não identificado';
 
@@ -124,7 +182,6 @@ export class PedidosComponent implements OnInit {
     return idProcurado > 0 ? `Item #${idProcurado}` : 'Item';
   }
 
-  /** Recalcula o valor total dinamicamente a partir dos subtotais dos itens */
   calcularValorTotal(pedido: any): number {
     if (!pedido) return 0;
     const valorDireto = Number(pedido.valorTotal || pedido.valor_total || pedido.total || 0);
@@ -138,7 +195,6 @@ export class PedidosComponent implements OnInit {
     }, 0);
   }
 
-  /** RF13: Seleciona o pedido para exibir na janela Modal */
   verDetalhes(idAtendimento: number): void {
     const p = this.pedidos.find(
       item => Number(item.idAtendimento || item.idatendimento || item.id) === Number(idAtendimento)
@@ -152,18 +208,19 @@ export class PedidosComponent implements OnInit {
     this.pedidoSelecionado = null;
   }
 
-  /** RF15: Atualização de status síncrona com sincronização em segundo plano */
   alterarStatus(idAtendimento: number, novoStatus: string): void {
     if (this.enviando) return;
 
     const id = Number(idAtendimento);
     this.enviando = true;
 
+    // Atualiza imediatamente na memória e no localStorage
     this.confirmarAtualizacaoStatus(id, novoStatus);
 
+    // Tenta sincronizar com o backend
     this.http.put(`${this.apiUrl}/${id}/status`, { statusAtendimento: novoStatus }).pipe(
       catchError(err => {
-        console.warn('Backend indisponível. Status mantido localmente.', err);
+        console.warn('Backend indisponível. Status alterado localmente com sucesso.', err);
         return of(null);
       })
     ).subscribe(() => {
@@ -177,10 +234,21 @@ export class PedidosComponent implements OnInit {
     );
 
     if (pedido) {
+      // 1. Atualiza todas as propriedades de status no objeto ativo
       pedido.statusAtendimento = novoStatus;
+      pedido.status = novoStatus;
+      pedido.status_atendimento = novoStatus;
+
       if (this.pedidoSelecionado) {
         this.pedidoSelecionado.statusAtendimento = novoStatus;
+        this.pedidoSelecionado.status = novoStatus;
+        this.pedidoSelecionado.status_atendimento = novoStatus;
       }
+
+      // 2. Persiste a lista inteira atualizada no localStorage
+      localStorage.setItem(this.LOCAL_KEY, JSON.stringify(this.pedidos));
+
+      // 3. Atualiza os filtros e notifica o utilizador
       this.aplicarFiltros();
       this.mensagemSucesso = `Status do Pedido #${idAtendimento} alterado para: ${novoStatus}`;
       

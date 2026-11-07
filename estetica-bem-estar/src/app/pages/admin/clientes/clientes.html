@@ -1,0 +1,91 @@
+<div class="container-admin">
+  
+  <!-- Cabeçalho alinhado de ponta a ponta -->
+  <div class="header-admin">
+    <div class="header-left">
+      <button type="button" class="btn-voltar" (click)="voltarHome()">← Voltar</button>
+    </div>
+    
+    <div class="header-center">
+      <h2 class="title-admin">Gestão de Clientes</h2>
+    </div>
+
+    <div class="header-right">
+      <div class="search-container" *ngIf="!clienteEditando">
+        <input 
+          type="number" 
+          class="search-input" 
+          placeholder="Buscar cliente por ID..." 
+          [(ngModel)]="buscaId" 
+          (input)="aplicarFiltro()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Card de Edição -->
+  <div class="card-edit" *ngIf="clienteEditando">
+    <h3>Editar Cliente #{{ clienteEditando.idPessoa || clienteEditando.id }}</h3>
+    <div class="form-grid">
+      <div>
+        <label>Nome:</label>
+        <input type="text" [(ngModel)]="clienteEditando.nomePessoa" class="input-custom">
+      </div>
+      <div>
+        <label>CPF:</label>
+        <input type="text" [(ngModel)]="clienteEditando.cpf" class="input-custom">
+      </div>
+      <div>
+        <label>E-mail:</label>
+        <input type="email" [(ngModel)]="clienteEditando.email" class="input-custom">
+      </div>
+      <div>
+        <label>Telefone:</label>
+        <input type="text" [(ngModel)]="clienteEditando.telefone" class="input-custom">
+      </div>
+    </div>
+    <div class="edit-btns">
+      <button class="btn-salvar" (click)="salvarEdicao()" [disabled]="salvandoEdicao">
+        {{ salvandoEdicao ? 'A guardar...' : 'Salvar Alterações' }}
+      </button>
+      <button class="btn-cancelar" (click)="cancelarEdicao()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Estado de carregamento -->
+  <div *ngIf="carregando" class="state-message">A carregar clientes...</div>
+
+  <!-- Tabela de Listagem -->
+  <div class="table-wrapper" *ngIf="!carregando && !clienteEditando && clientesFiltrados.length > 0">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>NOME</th>
+          <th>CPF</th>
+          <th>E-MAIL</th>
+          <th>TELEFONE</th>
+          <th>AÇÕES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of clientesFiltrados">
+          <td>#{{ c.idPessoa || c.id }}</td>
+          <td>{{ c.nomePessoa || c.nome }}</td>
+          <td>{{ c.cpf }}</td>
+          <td>{{ c.email }}</td>
+          <td>{{ c.telefone }}</td>
+          <td>
+            <div class="table-actions">
+              <button class="btn-acao-edit" (click)="iniciarEdicao(c)">✏️ Editar</button>
+              <button class="btn-acao-delete" (click)="excluirCliente(c)">🗑️ Excluir</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!carregando && !clienteEditando && clientesFiltrados.length === 0" class="state-message">
+    Nenhum cliente encontrado.
+  </div>
+</div>

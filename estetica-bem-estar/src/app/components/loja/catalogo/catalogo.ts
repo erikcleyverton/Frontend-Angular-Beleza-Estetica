@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CarrinhoService } from '../../../services/carrinho.service';
 import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
+import { CategoriaService } from '../../../services/categoria.service';
 
 export interface CategoriaLocal {
   idCategoria: number;
@@ -26,22 +27,21 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   produtosFixos: ItemSistema[] = [];
   produtosFiltrados: ItemSistema[] = [];
 
-  categorias: CategoriaLocal[] = [
-    { idCategoria: 1, categoria: 'Tratamentos Faciais' },
-    { idCategoria: 2, categoria: 'Massagens & Corporal' },
-    { idCategoria: 3, categoria: 'Cabelo & Capilar' },
-    { idCategoria: 4, categoria: 'Estética Geral' }
-  ];
+  // As categorias agora começam vazias e são preenchidas dinamicamente pela API
+  categorias: CategoriaLocal[] = [];
 
   private subItens?: Subscription;
+  private subCategorias?: Subscription;
 
   constructor(
     private router: Router,
     private carrinhoService: CarrinhoService,
-    private cadastroItensService: CadastroItensService
+    private cadastroItensService: CadastroItensService,
+    private categoriaService: CategoriaService
   ) {}
 
   ngOnInit(): void {
+    // 1. Carrega os itens do catálogo
     this.subItens = this.cadastroItensService.obterItens().subscribe({
       next: (itens: ItemSistema[]) => {
         this.produtosFixos = itens || [];
@@ -51,10 +51,30 @@ export class CatalogoComponent implements OnInit, OnDestroy {
         console.error('Erro ao carregar catálogo:', err);
       }
     });
+
+    // 2. Carrega as categorias do banco via CategoriaService
+    this.carregarCategoriasBD();
+  }
+
+  carregarCategoriasBD(): void {
+    this.subCategorias = this.categoriaService.obterTodas().subscribe({
+      next: (dados: any[]) => {
+        const lista = dados || [];
+        // Mapeia os dados da API para o formato esperado pelo HTML
+        this.categorias = lista.map((c: any) => ({
+          idCategoria: Number(c.idCategoria || c.id),
+          categoria: c.nomeCategoria || c.nome || c.categoria || 'Sem nome'
+        }));
+      },
+      error: (err: any) => {
+        console.error('Erro ao carregar categorias dinâmicas no catálogo:', err);
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.subItens?.unsubscribe();
+    this.subCategorias?.unsubscribe();
   }
 
   obterTipoNormalizado(prod: any): 'servico' | 'produto' {
