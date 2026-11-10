@@ -13,9 +13,9 @@
     <div class="header-right">
       <div class="search-container" *ngIf="!clienteEditando">
         <input 
-          type="number" 
+          type="text" 
           class="search-input" 
-          placeholder="Buscar cliente por ID..." 
+          placeholder="Buscar cliente por ID ou Nome..." 
           [(ngModel)]="buscaId" 
           (input)="aplicarFiltro()">
       </div>

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription, of } from 'rxjs';
-import { catchError, timeout } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 import { EntradaProdutoService, EntradaProduto } from '../../../services/entrada.service';
 import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
@@ -54,7 +54,7 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
     this.subItens = this.cadastroItensService.obterItens().subscribe({
       next: (itens: ItemSistema[]) => {
         this.produtosDisponiveis = itens.filter(
-          item => item.tipo === 'produto' || item.tipoItem === 'P'
+          item => item.tipo === 'produto' || (item as any).tipoItem === 'P'
         );
       },
       error: (err: any) => console.error('Erro ao carregar produtos:', err)
@@ -63,13 +63,17 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
 
   aoSelecionarProduto(): void {
     const id = Number(this.entrada.idItem);
-    this.produtoSelecionado = this.produtosDisponiveis.find(p => Number(p.id || p.idItem) === id);
+    this.produtoSelecionado = this.produtosDisponiveis.find(
+      p => Number((p as any).id || p.idItem || (p as any).iditem) === id
+    );
 
     if (this.produtoSelecionado) {
+      const prod = this.produtoSelecionado as any;
       this.entrada.valorUnitarioEntrada = Number(
-        this.produtoSelecionado.preco || 
-        this.produtoSelecionado.precoUnitario || 
-        this.produtoSelecionado.valorUnitario || 
+        prod.preco || 
+        prod.precoUnitario || 
+        prod.preco_venda || 
+        prod.precoVenda || 
         0
       );
     }
@@ -84,7 +88,8 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
       }
     });
   }
-registrarEntrada(): void {
+
+  registrarEntrada(): void {
     if (this.enviando) return;
 
     this.mensagemSucesso = '';
@@ -107,7 +112,6 @@ registrarEntrada(): void {
       return;
     }
 
-    // 1. Ativa a trava visual no botão
     this.enviando = true;
 
     const payload: EntradaProduto = {
@@ -117,27 +121,32 @@ registrarEntrada(): void {
       valorUnitarioEntrada: valorNum
     };
 
-    // 2. Atualiza o estoque local no serviço centralizado (persistido via localStorage)
-    this.cadastroItensService.atualizarEstoqueProduto(idItemNum, qtdNum);
+    // 1. Atualiza o estoque local no serviço
+    this.cadastroItensService.atualizarEstoqueProduto(idItemNum, qtdNum, valorNum);
 
-    // 3. Atualiza a interface e limpa o formulário imediatamente
+    // 2. Atualiza a lista em memória do componente usando cast seguro
+    const itemNaLista = this.produtosDisponiveis.find(
+      p => Number((p as any).id || p.idItem || (p as any).iditem) === idItemNum
+    );
+    if (itemNaLista) {
+      const prod = itemNaLista as any;
+      prod.preco = valorNum;
+      prod.precoUnitario = valorNum;
+      prod.preco_venda = valorNum;
+      prod.precoVenda = valorNum;
+    }
+
+    // 3. Atualiza histórico na tela e limpa formulário
     this.historicoEntradas.unshift(payload);
-    this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado com sucesso!';
+    this.mensagemSucesso = 'Entrada de produto registrada e estoque/preço atualizados!';
     this.limparFormulario();
-    this.enviando = false; // Liberado imediatamente!
+    this.enviando = false;
 
-    // 4. Envia para a API em segundo plano (sem travar a tela)
+    // 4. Envia para a API em segundo plano
     this.entradaService.registrarEntrada(payload).subscribe({
       next: () => console.log('Sincronizado com o backend com sucesso!'),
       error: (err: any) => console.warn('Backend indisponível. Mantido no estoque local.', err)
     });
-  }
-
-  private finalizarSucesso(payload: EntradaProduto): void {
-    this.historicoEntradas.unshift(payload);
-    this.mensagemSucesso = 'Entrada de produto registrada e estoque atualizado com sucesso!';
-    this.limparFormulario();
-    this.enviando = false; // Desbloqueia o botão imediatamente
   }
 
   limparFormulario(): void {

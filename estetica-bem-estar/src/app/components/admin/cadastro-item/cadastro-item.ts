@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+
 import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
 import { CategoriaService } from '../../../services/categoria.service';
 
@@ -14,20 +15,16 @@ import { CategoriaService } from '../../../services/categoria.service';
   styleUrl: './cadastro-item.css'
 })
 export class CadastroItemComponent implements OnInit, OnDestroy {
-  nomeItem: string = '';
-  tipoItem: 'P' | 'S' = 'P';
-  preco: number | null = null;
-  descricao: string = '';
-  idCategoria: number | null = null;
-  filtroTipo: 'P' | 'S' = 'P';
+  public nomeItem: string = '';
+  public tipoItem: 'P' | 'S' = 'P';
+  public preco: number | null = null;
+  public descricao: string = '';
+  public quantidadeEstoque: number | null = null;
+  public filtroTipo: 'P' | 'S' = 'P';
 
-  exibirNovoCampoCategoria: boolean = false;
-  novaCategoriaNome: string = '';
-  salvandoCategoria: boolean = false;
-
-  categorias: any[] = [];
-  todosOsItens: ItemSistema[] = [];
-  itensFiltrados: ItemSistema[] = [];
+  public categorias: any[] = [];
+  public todosOsItens: ItemSistema[] = [];
+  public itensFiltrados: ItemSistema[] = [];
 
   private subItens?: Subscription;
   private subCategorias?: Subscription;
@@ -35,7 +32,8 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
   constructor(
     private cadastroItensService: CadastroItensService,
     private categoriaService: CategoriaService,
-    private router: Router
+    private router: Router,
+    private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -52,7 +50,7 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
     this.subCategorias = this.categoriaService.obterTodas().subscribe({
       next: (dados: any[]) => {
         this.categorias = dados || [];
-        this.filtrarTabela();
+        this.cd.detectChanges();
       },
       error: (err: any) => console.error('Erro ao carregar categorias:', err)
     });
@@ -63,55 +61,9 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
       next: (itens) => {
         this.todosOsItens = itens || [];
         this.filtrarTabela();
+        this.cd.detectChanges();
       },
       error: (err) => console.error('Erro ao obter itens:', err)
-    });
-  }
-
-  toggleCampoCategoria(): void {
-    this.exibirNovoCampoCategoria = !this.exibirNovoCampoCategoria;
-    this.novaCategoriaNome = '';
-  }
-
-  cadastrarCategoriaRapida(): void {
-    if (!this.novaCategoriaNome.trim()) {
-      alert('Informe o nome da categoria!');
-      return;
-    }
-
-    this.salvandoCategoria = true;
-    const nomeCat = this.novaCategoriaNome.trim();
-    const payloadCat = {
-      categoria: nomeCat,
-      nome: nomeCat,
-      nomeCategoria: nomeCat
-    };
-
-    this.categoriaService.cadastrarCategoria(payloadCat).subscribe({
-      next: () => {
-        alert(`Categoria "${nomeCat}" cadastrada e guardada no banco com sucesso!`);
-        this.salvandoCategoria = false;
-        this.novaCategoriaNome = '';
-        this.exibirNovoCampoCategoria = false;
-        
-        // Atualiza a lista de categorias e seleciona a nova automaticamente
-        this.categoriaService.obterTodas().subscribe({
-          next: (dados: any[]) => {
-            this.categorias = dados || [];
-            const criada = this.categorias.find(
-              c => (c.nomeCategoria || c.nome || c.categoria) === nomeCat
-            );
-            if (criada) {
-              this.idCategoria = Number(criada.idCategoria || criada.id);
-            }
-          }
-        });
-      },
-      error: (err: any) => {
-        console.error('Erro ao cadastrar categoria:', err);
-        alert('Erro ao guardar categoria no servidor.');
-        this.salvandoCategoria = false;
-      }
     });
   }
 
@@ -127,15 +79,35 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
     );
   }
 
+  obterIdItem(item: any): number | string {
+    if (!item) return '-';
+    return item.id || item.idItem || item.iditem || item.Iditem || '-';
+  }
+
   obterNomeCategoria(item: any): string {
-    const idCat = Number(item.idCategoria || item.idcategoria || item.categoria);
+    const idCat = Number(item.idCategoria || item.idcategoria || item.categoria || item.Idcategoria);
     if (!idCat && typeof item.categoria === 'string') return item.categoria;
 
     const encontrada = this.categorias.find(
-      c => Number(c.idCategoria || c.id) === idCat
+      c => Number(c.idCategoria || c.id_categoria || c.id || c.IdCategoria) === idCat
     );
 
     return encontrada ? (encontrada.nomeCategoria || encontrada.nome || encontrada.categoria) : '-';
+  }
+
+  obterNomeItem(item: any): string {
+    if (!item) return '-';
+    return item.Item || item.item || item.Item1 || item.item1 || item.nomeItem || item.nome || '-';
+  }
+
+  obterPrecoItem(item: any): number {
+    if (!item) return 0;
+    return Number(item.preco || item.precoVenda || item.precoUnitario || item.Preco || item.PrecoVenda || 0);
+  }
+
+  obterDescricaoItem(item: any): string {
+    if (!item) return '-';
+    return item.DescricaoItem || item.descricaoItem || item.descricao || '-';
   }
 
   salvarItem(): void {
@@ -149,24 +121,32 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const idCat = this.categorias.length > 0 
+      ? Number(this.categorias[0].idCategoria || this.categorias[0].id_categoria || this.categorias[0].id || this.categorias[0].IdCategoria) 
+      : 1;
+
     const payload = {
-      nomeItem: this.nomeItem,
-      tipoItem: this.tipoItem,
-      preco: Number(this.preco),
-      descricao: this.descricao,
-      idCategoria: this.idCategoria ? Number(this.idCategoria) : null
+      IdCategoria: idCat,
+      Item: this.nomeItem.trim(),
+      DescricaoItem: this.descricao.trim(),
+      Preco: Number(this.preco),
+      TipoItem: this.tipoItem,
+      AtivoProdutoServico: 'S',
+      PrecoVenda: Number(this.preco),
+      Unidade: 'UN',
+      Estoque: this.quantidadeEstoque ? Number(this.quantidadeEstoque) : 0
     };
 
     this.cadastroItensService.cadastrarItem(payload).subscribe({
-      next: (itemCadastrado) => {
-        const nomeFinal = itemCadastrado?.nome || itemCadastrado?.nomeItem || this.nomeItem;
-        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} "${nomeFinal}" cadastrado com sucesso!`);
+      next: () => {
+        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} "${this.nomeItem}" cadastrado com sucesso!`);
         this.limparFormulario();
         this.carregarItens();
       },
       error: (err) => {
-        console.error('Erro ao cadastrar:', err);
-        alert('Erro ao salvar item.');
+        console.error('Erro na API:', err);
+        const msgErro = err?.error?.erro || err?.error?.mensagem || 'Erro ao comunicar com a API.';
+        alert(`Falha ao salvar no banco de dados:\n${msgErro}`);
       }
     });
   }
@@ -175,7 +155,8 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
     this.nomeItem = '';
     this.preco = null;
     this.descricao = '';
-    this.idCategoria = null;
+    this.quantidadeEstoque = null;
+    this.cd.detectChanges();
   }
 
   voltarHome(): void {

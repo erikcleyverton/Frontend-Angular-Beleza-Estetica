@@ -6,60 +6,30 @@
     <div style="width: 80px;"></div>
   </div>
 
-  <!-- Seleção de Abas (Produto x Serviço) -->
   <div class="tabs-tipo">
     <button [class.active]="tipoItem === 'P'" (click)="alternarTipo('P')"> Produtos</button>
     <button [class.active]="tipoItem === 'S'" (click)="alternarTipo('S')"> Serviços</button>
   </div>
 
-  <!-- Card do Formulário -->
   <div class="card-form">
     <div class="form-grid">
       
-      <!-- Nome do Item -->
       <div class="form-group">
         <label>NOME DO ITEM:</label>
         <input type="text" [(ngModel)]="nomeItem" placeholder="Ex: Limpeza de Pele / Creme" class="input-custom">
       </div>
 
-      <!-- Preço -->
       <div class="form-group">
         <label>PREÇO (R$):</label>
         <input type="number" [(ngModel)]="preco" placeholder="0.00" class="input-custom">
       </div>
 
-      <!-- Categoria com Inserção Rápida -->
-      <div class="form-group">
-        <div class="label-with-btn">
-          <label>CATEGORIA:</label>
-          <button type="button" class="btn-quick-cat" (click)="toggleCampoCategoria()">
-            {{ exibirNovoCampoCategoria ? '✖ Cancelar' : '+ Nova Categoria' }}
-          </button>
-        </div>
-
-        <select [(ngModel)]="idCategoria" class="input-custom" *ngIf="!exibirNovoCampoCategoria">
-          <option [ngValue]="null">-- Selecione uma Categoria --</option>
-          <option *ngFor="let cat of categorias" [value]="cat.idCategoria || cat.id">
-            {{ cat.nomeCategoria || cat.nome || cat.categoria }}
-          </option>
-        </select>
-
-        <!-- Input Rápido -->
-        <div class="quick-cat-input" *ngIf="exibirNovoCampoCategoria">
-          <input 
-            type="text" 
-            [(ngModel)]="novaCategoriaNome" 
-            placeholder="Nova categoria..." 
-            class="input-custom"
-            (keyup.enter)="cadastrarCategoriaRapida()">
-          <button type="button" class="btn-salvar-cat" (click)="cadastrarCategoriaRapida()" [disabled]="salvandoCategoria">
-            {{ salvandoCategoria ? '...' : 'Salvar' }}
-          </button>
-        </div>
+      <div class="form-group" *ngIf="tipoItem === 'P'">
+        <label>QUANTIDADE EM ESTOQUE:</label>
+        <input type="number" [(ngModel)]="quantidadeEstoque" placeholder="Ex: 10" class="input-custom">
       </div>
 
-      <!-- Descrição -->
-      <div class="form-group full-width">
+      <div class="form-group" [class.full-width]="tipoItem === 'S'">
         <label>DESCRIÇÃO:</label>
         <textarea [(ngModel)]="descricao" rows="3" placeholder="Detalhes do item..." class="input-custom"></textarea>
       </div>
@@ -71,7 +41,6 @@
     </div>
   </div>
 
-  <!-- Tabela de Itens Cadastrados com Coluna de Categoria -->
   <div class="table-wrapper" *ngIf="itensFiltrados.length > 0">
     <table class="admin-table">
       <thead>
@@ -85,13 +54,13 @@
       </thead>
       <tbody>
         <tr *ngFor="let item of itensFiltrados">
-          <td>#{{ item.id || item.idItem }}</td>
-          <td>{{ item.nome || item.nomeItem }}</td>
+          <td>#{{ obterIdItem(item) }}</td>
+          <td>{{ obterNomeItem(item) }}</td>
           <td>
             <span class="badge-cat">{{ obterNomeCategoria(item) }}</span>
           </td>
-          <td>R$ {{ (item.preco || item.precoUnitario || 0) | number:'1.2-2' }}</td>
-          <td>{{ item.descricao || '-' }}</td>
+          <td>R$ {{ obterPrecoItem(item) | number:'1.2-2' }}</td>
+          <td>{{ obterDescricaoItem(item) }}</td>
         </tr>
       </tbody>
     </table>

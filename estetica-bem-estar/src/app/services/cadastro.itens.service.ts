@@ -1,95 +1,120 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 
 export interface ItemSistema {
   id?: number;
   idItem?: number;
+  iditem?: number;
+  Iditem?: number;
   nome?: string;
   nomeItem?: string;
   item?: string;
+  Item?: string;
+  descricao?: string;
+  descricao_item?: string;
+  descricaoItem?: string;
+  DescricaoItem?: string;
+  categoria?: string;
+  idCategoria?: number;
+  idcategoria?: number;
+  IdCategoria?: number;
+  imagem?: string;
   preco?: number;
   precoUnitario?: number;
   valorUnitario?: number;
+  preco_venda?: number;
+  precoVenda?: number;
+  PrecoVenda?: number;
+  Preco?: number;
   tipo?: string;
   tipoItem?: string;
-  categoria?: string;
-  descricao?: string;
-  imagem?: string;
-  quantidade?: number;
+  TipoItem?: string;
   ativo?: boolean;
+  quantidade?: number;
+  quantidade_estoque?: number;
+  quantidadeEstoque?: number;
+  qtdAtual?: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class CadastroItensService {
-  private STORAGE_KEY = 'estetica_itens_estoque_v1';
+  private readonly API_URL = 'https://localhost:7077/api/ProdutoItem';
+  private STORAGE_KEY = 'estoque_cache_local';
 
-  private itensInicial: ItemSistema[] = [
-    { id: 1, idItem: 1, nome: 'Botox Facial', preco: 550, tipo: 'servico', tipoItem: 'S', ativo: true, quantidade: 0 },
-    { id: 2, idItem: 2, nome: 'Harmonização Facial', preco: 550, tipo: 'servico', tipoItem: 'S', ativo: true, quantidade: 0 },
-    { id: 3, idItem: 3, nome: 'Hidratante Labial Nutritivo 10g', preco: 25, tipo: 'produto', tipoItem: 'P', ativo: true, quantidade: 0 },
-    { id: 4, idItem: 4, nome: 'Sérum Anti-Idade Ácido Hialurónico', preco: 145, tipo: 'produto', tipoItem: 'P', ativo: true, quantidade: 0 }
-  ];
+  constructor(private http: HttpClient) {}
 
-  private itens: ItemSistema[] = [];
-  private itensSubject = new BehaviorSubject<ItemSistema[]>([]);
+  private normalizarItem(item: any, index: number = 0): ItemSistema {
+    if (!item) return {};
 
-  constructor() {
-    this.carregarEstoqueSalvo();
-  }
+    const nomeFinal = item.item || item.Item || item.nomeItem || item.nome || item.item1 || '';
+    const descFinal = item.descricaoItem || item.DescricaoItem || item.descricao || item.descricao_item || '';
+    const precoFinal = Number(item.precoVenda || item.PrecoVenda || item.preco || item.Preco || 0);
+    const idFinal = Number(item.idItem || item.iditem || item.Iditem || item.id || (index + 1));
+    const tipoFinal = (item.tipoItem || item.TipoItem || item.tipo || 'P').toUpperCase();
 
-  private carregarEstoqueSalvo(): void {
-    const dadosSalvos = localStorage.getItem(this.STORAGE_KEY);
-    if (dadosSalvos) {
-      try {
-        this.itens = JSON.parse(dadosSalvos);
-      } catch {
-        this.itens = [...this.itensInicial];
-      }
-    } else {
-      this.itens = [...this.itensInicial];
-    }
-    this.itensSubject.next([...this.itens]);
-  }
-
-  private salvarEstoque(): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.itens));
-    this.itensSubject.next([...this.itens]);
+    return {
+      ...item,
+      id: idFinal,
+      idItem: idFinal,
+      iditem: idFinal,
+      nome: nomeFinal,
+      nomeItem: nomeFinal,
+      item: nomeFinal,
+      Item: nomeFinal,
+      descricao: descFinal,
+      descricaoItem: descFinal,
+      DescricaoItem: descFinal,
+      preco: precoFinal,
+      precoVenda: precoFinal,
+      PrecoVenda: precoFinal,
+      Preco: precoFinal,
+      tipoItem: tipoFinal === 'S' ? 'S' : 'P',
+      tipo: tipoFinal === 'S' ? 'servico' : 'produto',
+      quantidade: item.quantidade ?? item.quantidade_estoque ?? item.quantidadeEstoque ?? 10
+    };
   }
 
   obterItens(): Observable<ItemSistema[]> {
-    return this.itensSubject.asObservable();
+    return this.http.get<any[]>(this.API_URL).pipe(
+      map((dados: any[]) => (dados || []).map((item: any, idx: number) => this.normalizarItem(item, idx))),
+      tap(itens => {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(itens));
+      }),
+      catchError(err => {
+        console.warn('Erro ao conectar com a API. Lendo do cache local.', err);
+        const salvos = localStorage.getItem(this.STORAGE_KEY);
+        const dadosLocais: any[] = salvos ? JSON.parse(salvos) : [];
+        return of(dadosLocais.map((item: any, idx: number) => this.normalizarItem(item, idx)));
+      })
+    );
   }
 
-  /** MÉTODO RESTAURADO PARA O CADASTRO DE PRODUTOS E SERVIÇOS */
-  cadastrarItem(novoItem: ItemSistema): Observable<ItemSistema> {
-    const idGerado = this.itens.length > 0 
-      ? Math.max(...this.itens.map(i => Number(i.id || i.idItem || 0))) + 1 
-      : 1;
+  cadastrarItem(payload: any): Observable<any> {
+    return this.http.post<any>(this.API_URL, payload).pipe(
+      map(resposta => this.normalizarItem(resposta)),
+      catchError(err => {
+        console.error('Erro ao enviar POST para a API:', err);
+        throw err;
+      })
+    );
+  }
 
-    const itemFormatado: ItemSistema = {
-      ...novoItem,
-      id: idGerado,
-      idItem: idGerado,
-      quantidade: novoItem.quantidade || 0,
-      ativo: novoItem.ativo ?? true
+  atualizarEstoqueProduto(idItem: number, quantidade: number, novoPreco?: number): Observable<any> {
+    const body = {
+      idItem: Number(idItem),
+      quantidade: Number(quantidade),
+      preco: novoPreco ? Number(novoPreco) : undefined
     };
 
-    this.itens.push(itemFormatado);
-    this.salvarEstoque();
-
-    return of(itemFormatado);
-  }
-
-  atualizarEstoqueProduto(idItem: number, quantidadeAdicionada: number): void {
-    const itemEncontrado = this.itens.find(
-      i => Number(i.id || i.idItem) === Number(idItem)
+    return this.http.put(`${this.API_URL}/${idItem}/estoque`, body).pipe(
+      catchError(err => {
+        console.warn('Endpoint de estoque indisponível.', err);
+        return of(null);
+      })
     );
-
-    if (itemEncontrado) {
-      itemEncontrado.quantidade = Number(itemEncontrado.quantidade || 0) + Number(quantidadeAdicionada);
-      this.salvarEstoque();
-    }
   }
 }

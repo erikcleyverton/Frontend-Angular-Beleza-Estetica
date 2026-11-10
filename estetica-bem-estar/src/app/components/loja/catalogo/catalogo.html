@@ -1,76 +1,113 @@
-<section class="container-catalogo">
-  <header class="catalogo-header">
-    <span class="tag-categoria">ESTÉTICA & BEM-ESTAR</span>
-    <h2>Nossos Tratamentos e Produtos</h2>
+<div class="container-catalogo">
+  
+  <header class="header-catalogo">
+    <h1>Nossos Tratamentos e Produtos</h1>
     <p>Selecione os procedimentos estéticos ou produtos cosméticos para adicionar ao seu carrinho</p>
   </header>
 
-  <!-- Filtros RF03: Pesquisa por Nome/ID + Filtro por Tipo -->
-  <div class="box-filtros-catalogo">
-    <div class="box-busca-catalogo">
+  <!-- Barra de Pesquisa e Filtros -->
+  <div class="filtros-container">
+    
+    <!-- Caixa de Busca -->
+    <div class="search-box">
       <input 
         type="text" 
         [(ngModel)]="termoBusca" 
         (ngModelChange)="filtrarProdutos()" 
-        placeholder="Pesquisar por nome ou ID..."
-        class="input-busca-catalogo"
-      />
-      <button *ngIf="termoBusca" type="button" class="btn-limpar-busca" (click)="limparFiltro()">Limpar</button>
+        placeholder="Pesquisar por nome ou ID..." 
+        class="input-busca">
     </div>
 
-    <!-- Botões de Alternância de Tipo (RF03) -->
-    <div class="btn-group-tipo">
+    <!-- Botões de Filtro por Tipo (Todos / Produtos / Serviços) -->
+    <div class="tabs-filtro">
       <button 
-        type="button" 
         [class.active]="filtroTipo === 'todos'" 
         (click)="setFiltroTipo('todos')">
         Todos
       </button>
       <button 
-        type="button" 
-        [class.active]="filtroTipo === 'produto'" 
-        (click)="setFiltroTipo('produto')">
+        [class.active]="filtroTipo === 'produtos'" 
+        (click)="setFiltroTipo('produtos')">
         Produtos
       </button>
       <button 
-        type="button" 
-        [class.active]="filtroTipo === 'servico'" 
-        (click)="setFiltroTipo('servico')">
+        [class.active]="filtroTipo === 'servicos'" 
+        (click)="setFiltroTipo('servicos')">
         Serviços
       </button>
     </div>
+
+    <!-- Filtro de Categorias (Se houver categorias no BD) -->
+    <div class="select-categoria" *ngIf="categorias.length > 0">
+      <select [(ngModel)]="categoriaSelecionada" (change)="filtrarProdutos()" class="select-custom">
+        <option value="TODAS">Todas as Categorias</option>
+        <option *ngFor="let cat of categorias" [value]="cat.idCategoria">
+          {{ cat.categoria }}
+        </option>
+      </select>
+    </div>
+
   </div>
 
-  <!-- Grelha de Exibição (RF01, RF10, RF11) -->
-  <div class="catalogo-grid" *ngIf="produtosFiltrados.length > 0">
-    <article class="card-produto" *ngFor="let prod of produtosFiltrados">
-      <div class="card-media">
-        <img [src]="prod.imagem || 'assets/placeholder.jpg'" [alt]="prod.nome || prod.nomeItem || prod.item" loading="lazy">
-        <span class="badge-preco">
-          R$ {{ (prod.precoUnitario || prod.preco || prod.valorUnitario || 0) | number:'1.2-2' }}
+  <!-- Lista / Grid de Produtos e Serviços -->
+  <div class="grid-produtos" *ngIf="produtosFiltrados.length > 0; else semItens">
+    
+    <div class="card-item" *ngFor="let item of produtosFiltrados">
+      
+      <!-- Cabeçalho do Card (Imagem e Badges) -->
+      <div class="card-image-wrapper">
+        <img 
+          [src]="$any(item).imagem || 'assets/placeholder.png'" 
+          (error)="$any($event.target).src = 'assets/placeholder.png'" 
+          alt="Imagem do item"
+          class="card-img">
+        
+        <!-- Badge indicando se é Produto ou Serviço -->
+        <span class="badge-tipo" [class.badge-servico]="obterTipoNormalizado(item) === 'servico'">
+          {{ obterTipoNormalizado(item) === 'servico' ? 'Serviço' : 'Produto' }}
         </span>
-        <span class="badge-tipo" [ngClass]="prod.tipo || (prod.tipoItem === 'S' ? 'servico' : 'produto')">
-          {{ (prod.tipo === 'servico' || prod.tipoItem === 'S') ? 'Serviço' : 'Produto' }}
+
+        <!-- Badge de Preço -->
+        <span class="badge-preco">
+          R$ {{ obterPrecoItem(item) | number:'1.2-2' }}
         </span>
       </div>
-      <div class="card-detalhes">
-        <h3 class="produto-titulo">{{ prod.nome || prod.nomeItem || prod.item }}</h3>
-        <p class="produto-descricao">{{ prod.descricao || 'Sem descrição.' }}</p>
-        <div class="card-acoes">
-          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(prod.id || prod.idItem)">Ver detalhes</button>
-          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(prod)">Adicionar</button>
+
+      <!-- Corpo do Card -->
+      <div class="card-content">
+        <h3 class="card-title">{{ obterNomeItem(item) }}</h3>
+        <p class="card-description">{{ obterDescricaoItem(item) }}</p>
+
+        <!-- Ações do Cliente -->
+        <div class="card-actions">
+          <button type="button" class="btn-detalhes" (click)="abrirDetalhes(item.id)">
+            Ver detalhes
+          </button>
+          <button type="button" class="btn-adicionar" (click)="adicionarAoCarrinho(item)">
+            Adicionar
+          </button>
         </div>
       </div>
-    </article>
+
+    </div>
+
   </div>
 
-  <div *ngIf="produtosFiltrados.length === 0" class="empty-message">
-    Nenhum item encontrado.
-  </div>
+  <!-- Mensagem para quando a busca/filtro não retornar resultados -->
+  <ng-template #semItens>
+    <div class="empty-state">
+      <p>Nenhum item encontrado.</p>
+      <button type="button" class="btn-limpar" (click)="limparFiltro()" *ngIf="termoBusca || filtroTipo !== 'todos' || categoriaSelecionada !== 'TODAS'">
+        Limpar Filtros
+      </button>
+    </div>
+  </ng-template>
 
-  <div class="catalogo-rodape-acoes">
-    <button type="button" class="btn-voltar" (click)="voltar()">Voltar</button>
-    <button type="button" class="btn-ir-cadastro" (click)="irParaCadastro()">Cadastrar Novo Cliente</button>
-    <button type="button" class="btn-ir-carrinho" (click)="irParaCarrinho()">Ir para o Carrinho</button>
-  </div>
-</section>
+  <!-- Rodapé com Ações Principais -->
+  <footer class="footer-actions">
+    <button type="button" class="btn-footer-secondary" (click)="voltar()">Voltar</button>
+    <button type="button" class="btn-footer-secondary" (click)="irParaCadastro()">Cadastrar Novo Cliente</button>
+    <button type="button" class="btn-footer-primary" (click)="irParaCarrinho()">Ir para o Carrinho</button>
+  </footer>
+
+</div>
