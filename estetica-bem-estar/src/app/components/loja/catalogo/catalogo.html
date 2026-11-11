@@ -37,7 +37,7 @@
       </button>
     </div>
 
-    <!-- Filtro de Categorias (Se houver categorias no BD) -->
+    <!-- Filtro de Categorias -->
     <div class="select-categoria" *ngIf="categorias.length > 0">
       <select [(ngModel)]="categoriaSelecionada" (change)="filtrarProdutos()" class="select-custom">
         <option value="TODAS">Todas as Categorias</option>
@@ -49,12 +49,12 @@
 
   </div>
 
-  <!-- Lista / Grid de Produtos e Serviços -->
+  <!-- Grid de Produtos e Serviços -->
   <div class="grid-produtos" *ngIf="produtosFiltrados.length > 0; else semItens">
     
     <div class="card-item" *ngFor="let item of produtosFiltrados">
       
-      <!-- Cabeçalho do Card (Imagem e Badges) -->
+      <!-- Cabeçalho do Card -->
       <div class="card-image-wrapper">
         <img 
           [src]="$any(item).imagem || 'assets/placeholder.png'" 
@@ -62,7 +62,7 @@
           alt="Imagem do item"
           class="card-img">
         
-        <!-- Badge indicando se é Produto ou Serviço -->
+        <!-- Badge de Produto/Serviço -->
         <span class="badge-tipo" [class.badge-servico]="obterTipoNormalizado(item) === 'servico'">
           {{ obterTipoNormalizado(item) === 'servico' ? 'Serviço' : 'Produto' }}
         </span>
@@ -93,7 +93,7 @@
 
   </div>
 
-  <!-- Mensagem para quando a busca/filtro não retornar resultados -->
+  <!-- Empty State -->
   <ng-template #semItens>
     <div class="empty-state">
       <p>Nenhum item encontrado.</p>
@@ -103,7 +103,7 @@
     </div>
   </ng-template>
 
-  <!-- Rodapé com Ações Principais -->
+  <!-- Rodapé -->
   <footer class="footer-actions">
     <button type="button" class="btn-footer-secondary" (click)="voltar()">Voltar</button>
     <button type="button" class="btn-footer-secondary" (click)="irParaCadastro()">Cadastrar Novo Cliente</button>

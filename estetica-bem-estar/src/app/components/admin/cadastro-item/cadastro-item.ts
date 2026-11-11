@@ -17,6 +17,7 @@ import { CategoriaService } from '../../../services/categoria.service';
 export class CadastroItemComponent implements OnInit, OnDestroy {
   public nomeItem: string = '';
   public tipoItem: 'P' | 'S' = 'P';
+  public idCategoriaSelecionada: number | null = null; // <-- Propriedade da Categoria
   public preco: number | null = null;
   public descricao: string = '';
   public quantidadeEstoque: number | null = null;
@@ -50,6 +51,13 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
     this.subCategorias = this.categoriaService.obterTodas().subscribe({
       next: (dados: any[]) => {
         this.categorias = dados || [];
+        // Define a primeira categoria como padrão se nenhuma estiver selecionada
+        if (this.categorias.length > 0 && !this.idCategoriaSelecionada) {
+          const primeiraCat = this.categorias[0];
+          this.idCategoriaSelecionada = Number(
+            primeiraCat.idCategoria || primeiraCat.id_categoria || primeiraCat.id || primeiraCat.IdCategoria || primeiraCat.idcategoria
+          );
+        }
         this.cd.detectChanges();
       },
       error: (err: any) => console.error('Erro ao carregar categorias:', err)
@@ -85,14 +93,21 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
   }
 
   obterNomeCategoria(item: any): string {
-    const idCat = Number(item.idCategoria || item.idcategoria || item.categoria || item.Idcategoria);
-    if (!idCat && typeof item.categoria === 'string') return item.categoria;
+    const idCat = Number(item.idCategoria || item.idcategoria || item.categoria || item.Idcategoria || item.idCategoria);
+    
+    // Fallback caso venha o texto direto da categoria no banco
+    const catTexto = item.categoria || item.nomeCategoria || item.categoria1 || item.Categoria1;
+    
+    const encontrada = this.categorias.find(c => {
+      const idC = Number(c.idCategoria || c.id_categoria || c.id || c.IdCategoria || c.idcategoria);
+      return idC === idCat;
+    });
 
-    const encontrada = this.categorias.find(
-      c => Number(c.idCategoria || c.id_categoria || c.id || c.IdCategoria) === idCat
-    );
+    if (encontrada) {
+      return encontrada.nomeCategoria || encontrada.nome || encontrada.categoria || encontrada.categoria1 || encontrada.Categoria1 || '-';
+    }
 
-    return encontrada ? (encontrada.nomeCategoria || encontrada.nome || encontrada.categoria) : '-';
+    return typeof catTexto === 'string' && catTexto ? catTexto : '-';
   }
 
   obterNomeItem(item: any): string {
@@ -110,52 +125,71 @@ export class CadastroItemComponent implements OnInit, OnDestroy {
     return item.DescricaoItem || item.descricaoItem || item.descricao || '-';
   }
 
-  salvarItem(): void {
-    if (!this.nomeItem.trim()) {
-      alert('Por favor, preencha o nome!');
-      return;
-    }
-
-    if (!this.preco || this.preco <= 0) {
-      alert('Por favor, insira um preço válido!');
-      return;
-    }
-
-    const idCat = this.categorias.length > 0 
-      ? Number(this.categorias[0].idCategoria || this.categorias[0].id_categoria || this.categorias[0].id || this.categorias[0].IdCategoria) 
-      : 1;
-
-    const payload = {
-      IdCategoria: idCat,
-      Item: this.nomeItem.trim(),
-      DescricaoItem: this.descricao.trim(),
-      Preco: Number(this.preco),
-      TipoItem: this.tipoItem,
-      AtivoProdutoServico: 'S',
-      PrecoVenda: Number(this.preco),
-      Unidade: 'UN',
-      Estoque: this.quantidadeEstoque ? Number(this.quantidadeEstoque) : 0
-    };
-
-    this.cadastroItensService.cadastrarItem(payload).subscribe({
-      next: () => {
-        alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} "${this.nomeItem}" cadastrado com sucesso!`);
-        this.limparFormulario();
-        this.carregarItens();
-      },
-      error: (err) => {
-        console.error('Erro na API:', err);
-        const msgErro = err?.error?.erro || err?.error?.mensagem || 'Erro ao comunicar com a API.';
-        alert(`Falha ao salvar no banco de dados:\n${msgErro}`);
-      }
-    });
+ salvarItem(): void {
+  if (!this.nomeItem.trim()) {
+    alert('Por favor, preencha o nome!');
+    return;
   }
 
+  if (!this.idCategoriaSelecionada || Number(this.idCategoriaSelecionada) <= 0) {
+    alert('Por favor, selecione uma categoria válida!');
+    return;
+  }
+
+  if (!this.preco || this.preco <= 0) {
+    alert('Por favor, insira um preço válido!');
+    return;
+  }
+
+  const payload = {
+    IdCategoria: Number(this.idCategoriaSelecionada),
+    Item: this.nomeItem.trim(),
+    DescricaoItem: this.descricao.trim(),
+    Preco: Number(this.preco),
+    TipoItem: this.tipoItem, // 'P' ou 'S'
+    tipoItem: this.tipoItem,
+    AtivoProdutoServico: 'S',
+    PrecoVenda: Number(this.preco),
+    Unidade: 'UN'
+  };
+
+  this.cadastroItensService.cadastrarItem(payload).subscribe({
+    next: (itemCadastrado) => {
+      alert(`${this.tipoItem === 'P' ? 'Produto' : 'Serviço'} "${this.nomeItem}" cadastrado com sucesso!`);
+      
+      // 1. Limpa os campos do formulário
+      this.limparFormulario();
+
+      // 2. Garante que a aba (filtroTipo) acompanha o tipo do item cadastrado
+      this.filtroTipo = this.tipoItem;
+
+      // 3. Adiciona o novo item diretamente na lista local sem esperar por novo GET
+      if (itemCadastrado && itemCadastrado.id) {
+        this.todosOsItens = [...this.todosOsItens, itemCadastrado];
+        this.filtrarTabela();
+      }
+
+      // 4. Recarrega a lista do servidor em segundo plano para sincronizar IDs do MySQL
+      this.carregarItens();
+    },
+    error: (err) => {
+      console.error('Erro na API:', err);
+      const msgErro = err?.error?.erro || err?.error?.mensagem || 'Erro ao comunicar com a API.';
+      alert(`Falha ao salvar no banco de dados:\n${msgErro}`);
+    }
+  });
+}
   limparFormulario(): void {
     this.nomeItem = '';
     this.preco = null;
     this.descricao = '';
     this.quantidadeEstoque = null;
+    if (this.categorias.length > 0) {
+      const primeiraCat = this.categorias[0];
+      this.idCategoriaSelecionada = Number(
+        primeiraCat.idCategoria || primeiraCat.id_categoria || primeiraCat.id || primeiraCat.IdCategoria || primeiraCat.idcategoria
+      );
+    }
     this.cd.detectChanges();
   }
 

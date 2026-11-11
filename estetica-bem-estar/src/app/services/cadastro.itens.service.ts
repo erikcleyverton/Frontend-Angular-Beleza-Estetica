@@ -54,7 +54,24 @@ export class CadastroItensService {
     const descFinal = item.descricaoItem || item.DescricaoItem || item.descricao || item.descricao_item || '';
     const precoFinal = Number(item.precoVenda || item.PrecoVenda || item.preco || item.Preco || 0);
     const idFinal = Number(item.idItem || item.iditem || item.Iditem || item.id || (index + 1));
-    const tipoFinal = (item.tipoItem || item.TipoItem || item.tipo || 'P').toUpperCase();
+    
+    // Captura todas as variações possíveis de propriedade do banco
+    const rawTipo = String(
+      item.tipoItem || item.TipoItem || item.tipo_item || item.tipo || item.Tipo || ''
+    ).toUpperCase().trim();
+
+    // Palavras-chave estéticas para fallback caso o campo venha NULL do banco
+    const nomeLower = nomeFinal.toLowerCase();
+    const termosServico = [
+      'massagem', 'botox', 'harmonização', 'harmonizacao', 
+      'peeling', 'limpeza', 'drenagem', 'tratamento', 'laser', 'facil', 'facial'
+    ];
+    const ehServicoPorNome = termosServico.some(t => nomeLower.includes(t));
+
+    // Define se é Serviço ('S') ou Produto ('P')
+    const ehServico = rawTipo === 'S' || rawTipo === 'SERVICO' || rawTipo === 'SERVIÇO' || (rawTipo === '' && ehServicoPorNome);
+    const tipoItemFinal: 'S' | 'P' = ehServico ? 'S' : 'P';
+    const tipoExtenso: 'servico' | 'produto' = ehServico ? 'servico' : 'produto';
 
     return {
       ...item,
@@ -72,8 +89,9 @@ export class CadastroItensService {
       precoVenda: precoFinal,
       PrecoVenda: precoFinal,
       Preco: precoFinal,
-      tipoItem: tipoFinal === 'S' ? 'S' : 'P',
-      tipo: tipoFinal === 'S' ? 'servico' : 'produto',
+      tipoItem: tipoItemFinal,
+      TipoItem: tipoItemFinal,
+      tipo: tipoExtenso,
       quantidade: item.quantidade ?? item.quantidade_estoque ?? item.quantidadeEstoque ?? 10
     };
   }
@@ -94,7 +112,14 @@ export class CadastroItensService {
   }
 
   cadastrarItem(payload: any): Observable<any> {
-    return this.http.post<any>(this.API_URL, payload).pipe(
+    // Garante que o payload envie os dois formatos de case para a API C#
+    const bodyAjustado = {
+      ...payload,
+      TipoItem: payload.TipoItem || payload.tipoItem || 'P',
+      tipoItem: payload.TipoItem || payload.tipoItem || 'P'
+    };
+
+    return this.http.post<any>(this.API_URL, bodyAjustado).pipe(
       map(resposta => this.normalizarItem(resposta)),
       catchError(err => {
         console.error('Erro ao enviar POST para a API:', err);

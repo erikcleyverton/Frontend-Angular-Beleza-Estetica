@@ -9,13 +9,15 @@ export interface ItemEstoque {
   quantidadeEstoque: number;
   unidade?: string;
   precoVenda?: number;
+  tipoItem?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class EstoqueService {
-  private apiUrl = 'https://localhost:7077/api/estoque';
+  // APONTA PARA A ROTA ONDE MAPEAMOS O ESTOQUE CORRETAMENTE
+  private apiUrl = 'https://localhost:7077/api/ProdutoItem'; 
 
   constructor(private http: HttpClient) {}
 

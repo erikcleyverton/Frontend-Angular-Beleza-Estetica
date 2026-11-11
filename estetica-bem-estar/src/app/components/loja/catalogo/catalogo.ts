@@ -40,6 +40,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.carregarCategoriasBD();
+    this.carregarItensBD();
+  }
+
+  carregarItensBD(): void {
     this.subItens = this.cadastroItensService.obterItens().subscribe({
       next: (itens: ItemSistema[]) => {
         this.produtosFixos = (itens || []).map((item, idx) => {
@@ -64,8 +69,6 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => console.error('Erro ao carregar catálogo:', err)
     });
-
-    this.carregarCategoriasBD();
   }
 
   carregarCategoriasBD(): void {
@@ -73,8 +76,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       next: (dados: any[]) => {
         const lista = dados || [];
         this.categorias = lista.map((c: any) => ({
-          idCategoria: Number(c.idCategoria || c.id_categoria || c.id || c.IdCategoria),
-          categoria: c.nomeCategoria || c.nome || c.categoria || 'Sem nome'
+          idCategoria: Number(c.idCategoria || c.id_categoria || c.id || c.IdCategoria || c.idcategoria),
+          categoria: c.nomeCategoria || c.nome || c.categoria || c.categoria1 || c.Categoria1 || 'Sem nome'
         }));
         this.cd.detectChanges();
       },
@@ -87,17 +90,33 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.subCategorias?.unsubscribe();
   }
 
-  // Identifica com precisão se é Serviço (S) ou Produto (P)
+  /**
+   * Normalização inteligente para separar Produto e Serviço
+   */
   obterTipoNormalizado(prod: any): 'servico' | 'produto' {
     if (!prod) return 'produto';
-    const t = String(prod.tipoItem || prod.TipoItem || prod.tipo || prod.tipo_item || '').toLowerCase().trim();
-    
+
+    const t = String(
+      prod.tipoItem || prod.TipoItem || prod.tipo_item || prod.tipo || prod.AtivoProdutoServico || ''
+    ).toLowerCase().trim();
+
     if (t === 's' || t === 'servico' || t === 'serviço') {
       return 'servico';
     }
-    
-    // Se não houver indicação ou for 'p', trata como produto
-    return 'produto';
+
+    if (t === 'p' || t === 'produto') {
+      return 'produto';
+    }
+
+    // Fallback por palavra-chave se vier NULL do banco
+    const nome = this.obterNomeItem(prod).toLowerCase();
+    const termosServico = [
+      'botox', 'harmonização', 'harmonizacao', 'preenchimento', 
+      'tratamento', 'limpeza', 'massagem', 'peeling', 'drenagem', 
+      'aplicação', 'aplicacao', 'laser', 'facial'
+    ];
+
+    return termosServico.some(termo => nome.includes(termo)) ? 'servico' : 'produto';
   }
 
   obterNomeItem(prod: any): string {
@@ -118,26 +137,36 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   filtrarProdutos(): void {
     const busca = this.termoBusca.toLowerCase().trim();
 
+    const catSelecionadaNum = (this.categoriaSelecionada === 'TODAS' || this.categoriaSelecionada === '')
+      ? 'TODAS'
+      : Number(this.categoriaSelecionada);
+
     this.produtosFiltrados = this.produtosFixos.filter(prod => {
       const pAny = prod as any;
       const nomeOuId = (this.obterNomeItem(prod)).toLowerCase();
-      const idStr = (prod.id || prod.idItem || pAny.iditem || '').toString();
+      const idStr = (prod.id || prod.idItem || pAny.iditem || pAny.Iditem || '').toString();
       
       const tipoNormalizado = this.obterTipoNormalizado(prod);
-      const idCatItem = Number(pAny.IdCategoria || pAny.idCategoria || pAny.idcategoria || prod.categoria);
+
+      // Pega a categoria do item convertendo para Number
+      const idCatItem = Number(
+        pAny.IdCategoria || pAny.idCategoria || pAny.idcategoria || pAny.Idcategoria || prod.categoria || 0
+      );
 
       const atendeTexto = !busca || nomeOuId.includes(busca) || idStr.includes(busca);
       
-      // Filtra de acordo com a aba clicada: 'todos', 'produtos' ou 'servicos'
       const atendeTipo = 
         this.filtroTipo === 'todos' || 
         (this.filtroTipo === 'produtos' && tipoNormalizado === 'produto') ||
         (this.filtroTipo === 'servicos' && tipoNormalizado === 'servico');
 
-      const atendeCategoria = this.categoriaSelecionada === 'TODAS' || idCatItem === Number(this.categoriaSelecionada);
+      const atendeCategoria = 
+        catSelecionadaNum === 'TODAS' || idCatItem === catSelecionadaNum;
 
       return atendeTexto && atendeTipo && atendeCategoria;
     });
+
+    this.cd.detectChanges();
   }
 
   setFiltroTipo(tipo: string): void {
@@ -170,7 +199,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       tipo: tipoNormalizado,
       tipoItem: tipoNormalizado === 'servico' ? 'S' : 'P',
       categoria: pAny.categoria || 'Geral',
-      imagem: pAny.imagem || 'assets/placeholder.jpg'
+      imagem: pAny.imagem || 'assets/placeholder.png'
     });
 
     alert(`"${nome}" foi adicionado ao carrinho!`);

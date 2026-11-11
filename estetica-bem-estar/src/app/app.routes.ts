@@ -9,6 +9,7 @@ import { CarrinhoComponent } from './components/loja/carrinho/carrinho';
 // Módulo 2 - Painel Administrativo
 import { CadastroItemComponent } from './components/admin/cadastro-item/cadastro-item';
 import { EntradaProdutoComponent } from './components/admin/entrada-produto/entrada-produto';
+import { CadastroCategoriaComponent } from './components/admin/cadastro-categoria/cadastro-categoria';
 import { ClientesComponent } from './pages/admin/clientes/clientes';
 import { ConsultaEstoqueComponent } from './pages/admin/estoque/estoque';
 import { PedidosComponent } from './pages/admin/pedidos/pedidos';
@@ -25,11 +26,15 @@ export const routes: Routes = [
   // Módulo 2 - Painel Administrativo
   { path: 'admin', redirectTo: 'admin/clientes', pathMatch: 'full' },
   { path: 'admin/itens', component: CadastroItemComponent },
+  { path: 'admin/categoria', component: CadastroCategoriaComponent },
   { path: 'admin/entrada-produto', component: EntradaProdutoComponent },
   { path: 'admin/clientes', component: ClientesComponent },
   { path: 'admin/estoque', component: ConsultaEstoqueComponent },
   { path: 'admin/pedidos', component: PedidosComponent },
 
-  // Rota curinga para redirecionar em caso de 404
+  // Alias direto para compatibilidade de navegação
+  { path: 'cadastro-categoria', component: CadastroCategoriaComponent },
+
+  // Rota curinga para 404
   { path: '**', redirectTo: 'home' }
 ];

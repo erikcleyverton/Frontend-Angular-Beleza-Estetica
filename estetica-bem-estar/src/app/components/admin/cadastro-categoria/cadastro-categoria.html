@@ -1,0 +1,41 @@
+<div class="container-admin">
+  
+  <div class="header-admin">
+    <button type="button" class="btn-voltar" (click)="voltar()">← Voltar</button>
+    <h2 class="title-admin">Gerenciar Categorias</h2>
+    <div style="width: 80px;"></div>
+  </div>
+
+  <div class="card-form">
+    <div class="form-group">
+      <label>NOME DA CATEGORIA:</label>
+      <input 
+        type="text" 
+        [(ngModel)]="nomeCategoria" 
+        placeholder="Ex: Faciais, Dermocosméticos, Massagens..." 
+        class="input-custom">
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-salvar" (click)="salvarCategoria()">Cadastrar Categoria</button>
+    </div>
+  </div>
+
+  <div class="table-wrapper" *ngIf="categorias.length > 0">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th>NOME DA CATEGORIA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cat of categorias">
+          <td>#{{ cat.idCategoria }}</td>
+          <td>{{ cat.nomeCategoria }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

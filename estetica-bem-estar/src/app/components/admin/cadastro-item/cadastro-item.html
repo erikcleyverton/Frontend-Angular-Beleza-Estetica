@@ -19,17 +19,23 @@
         <input type="text" [(ngModel)]="nomeItem" placeholder="Ex: Limpeza de Pele / Creme" class="input-custom">
       </div>
 
+      <!-- CAMPO DE SELEÇÃO DE CATEGORIA VINCULADO AO BANCO -->
       <div class="form-group">
+        <label>CATEGORIA:</label>
+        <select [(ngModel)]="idCategoriaSelecionada" class="input-custom">
+          <option [ngValue]="null" disabled selected>Selecione uma categoria...</option>
+          <option *ngFor="let cat of categorias" [value]="cat.idCategoria || cat.id_categoria || cat.id || cat.IdCategoria || cat.idcategoria">
+            {{ cat.nomeCategoria || cat.nome || cat.categoria || cat.categoria1 || cat.Categoria1 }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group full-width">
         <label>PREÇO (R$):</label>
         <input type="number" [(ngModel)]="preco" placeholder="0.00" class="input-custom">
       </div>
 
-      <div class="form-group" *ngIf="tipoItem === 'P'">
-        <label>QUANTIDADE EM ESTOQUE:</label>
-        <input type="number" [(ngModel)]="quantidadeEstoque" placeholder="Ex: 10" class="input-custom">
-      </div>
-
-      <div class="form-group" [class.full-width]="tipoItem === 'S'">
+      <div class="form-group full-width">
         <label>DESCRIÇÃO:</label>
         <textarea [(ngModel)]="descricao" rows="3" placeholder="Detalhes do item..." class="input-custom"></textarea>
       </div>
