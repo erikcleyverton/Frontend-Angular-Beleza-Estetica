@@ -20,16 +20,15 @@
       </div>
 
       <!-- CAMPO DE SELEÇÃO DE CATEGORIA VINCULADO AO BANCO -->
-      <div class="form-group">
-        <label>CATEGORIA:</label>
-        <select [(ngModel)]="idCategoriaSelecionada" class="input-custom">
-          <option [ngValue]="null" disabled selected>Selecione uma categoria...</option>
-          <option *ngFor="let cat of categorias" [value]="cat.idCategoria || cat.id_categoria || cat.id || cat.IdCategoria || cat.idcategoria">
-            {{ cat.nomeCategoria || cat.nome || cat.categoria || cat.categoria1 || cat.Categoria1 }}
-          </option>
-        </select>
-      </div>
-
+   <div class="form-group">
+  <label>CATEGORIA:</label>
+  <select [(ngModel)]="idCategoriaSelecionada" class="input-custom">
+    <option [ngValue]="null" disabled>Selecione uma categoria...</option>
+    <option *ngFor="let cat of categorias" [value]="cat.idCategoria || cat.idcategoria || cat.id">
+      {{ cat.nomeCategoria || cat.nome || cat.categoria }}
+    </option>
+  </select>
+</div>
       <div class="form-group full-width">
         <label>PREÇO (R$):</label>
         <input type="number" [(ngModel)]="preco" placeholder="0.00" class="input-custom">

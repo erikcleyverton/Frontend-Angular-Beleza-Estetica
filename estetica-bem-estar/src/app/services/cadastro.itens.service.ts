@@ -36,6 +36,7 @@ export interface ItemSistema {
   quantidade_estoque?: number;
   quantidadeEstoque?: number;
   qtdAtual?: number;
+  unidade?: string;
 }
 
 @Injectable({
@@ -54,13 +55,13 @@ export class CadastroItensService {
     const descFinal = item.descricaoItem || item.DescricaoItem || item.descricao || item.descricao_item || '';
     const precoFinal = Number(item.precoVenda || item.PrecoVenda || item.preco || item.Preco || 0);
     const idFinal = Number(item.idItem || item.iditem || item.Iditem || item.id || (index + 1));
+    const catIdFinal = Number(item.idCategoria || item.idcategoria || item.IdCategoria || 1);
     
-    // Captura todas as variações possíveis de propriedade do banco
+    // Captura tipo de item
     const rawTipo = String(
       item.tipoItem || item.TipoItem || item.tipo_item || item.tipo || item.Tipo || ''
     ).toUpperCase().trim();
 
-    // Palavras-chave estéticas para fallback caso o campo venha NULL do banco
     const nomeLower = nomeFinal.toLowerCase();
     const termosServico = [
       'massagem', 'botox', 'harmonização', 'harmonizacao', 
@@ -68,16 +69,20 @@ export class CadastroItensService {
     ];
     const ehServicoPorNome = termosServico.some(t => nomeLower.includes(t));
 
-    // Define se é Serviço ('S') ou Produto ('P')
     const ehServico = rawTipo === 'S' || rawTipo === 'SERVICO' || rawTipo === 'SERVIÇO' || (rawTipo === '' && ehServicoPorNome);
     const tipoItemFinal: 'S' | 'P' = ehServico ? 'S' : 'P';
     const tipoExtenso: 'servico' | 'produto' = ehServico ? 'servico' : 'produto';
+
+    const qtdReal = item.quantidadeEstoque ?? item.quantidade_estoque ?? item.quantidade ?? 0;
 
     return {
       ...item,
       id: idFinal,
       idItem: idFinal,
       iditem: idFinal,
+      idCategoria: catIdFinal,
+      idcategoria: catIdFinal,
+      IdCategoria: catIdFinal,
       nome: nomeFinal,
       nomeItem: nomeFinal,
       item: nomeFinal,
@@ -92,7 +97,8 @@ export class CadastroItensService {
       tipoItem: tipoItemFinal,
       TipoItem: tipoItemFinal,
       tipo: tipoExtenso,
-      quantidade: item.quantidade ?? item.quantidade_estoque ?? item.quantidadeEstoque ?? 10
+      quantidade: qtdReal,
+      quantidadeEstoque: qtdReal
     };
   }
 
@@ -112,11 +118,17 @@ export class CadastroItensService {
   }
 
   cadastrarItem(payload: any): Observable<any> {
-    // Garante que o payload envie os dois formatos de case para a API C#
+    // Body formatado com camelCase e fallback seguro para nulos
     const bodyAjustado = {
-      ...payload,
-      TipoItem: payload.TipoItem || payload.tipoItem || 'P',
-      tipoItem: payload.TipoItem || payload.tipoItem || 'P'
+      idCategoria: Number(payload.idCategoria || payload.IdCategoria || payload.idcategoria || 1),
+      item: payload.item || payload.Item || payload.nome || payload.nomeItem || '',
+      descricaoItem: payload.descricaoItem || payload.DescricaoItem || payload.descricao || '',
+      preco: Number(payload.preco || payload.Preco || 0),
+      precoVenda: Number(payload.precoVenda || payload.PrecoVenda || payload.preco || 0),
+      tipoItem: (payload.tipoItem || payload.TipoItem || payload.tipo || 'P').toUpperCase().startsWith('S') ? 'S' : 'P',
+      ativoProdutoServico: 'S',
+      unidade: payload.unidade || payload.Unidade || 'UN',
+      quantidadeEstoque: Number(payload.quantidadeEstoque ?? payload.quantidade ?? payload.quantidade_estoque ?? 0)
     };
 
     return this.http.post<any>(this.API_URL, bodyAjustado).pipe(
@@ -135,7 +147,7 @@ export class CadastroItensService {
       preco: novoPreco ? Number(novoPreco) : undefined
     };
 
-    return this.http.put(`${this.API_URL}/${idItem}/estoque`, body).pipe(
+    return this.http.put(`${this.API_URL}/${idItem}`, body).pipe(
       catchError(err => {
         console.warn('Endpoint de estoque indisponível.', err);
         return of(null);

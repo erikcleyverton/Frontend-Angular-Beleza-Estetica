@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { CadastroItensService } from './cadastro.itens.service';
 
 export interface EntradaProduto {
@@ -16,8 +16,7 @@ export interface EntradaProduto {
   providedIn: 'root'
 })
 export class EntradaProdutoService {
-  private readonly apiUrlEntradas = 'https://localhost:7077/api/entradaprodutos';
-  private readonly apiUrlItens = 'https://localhost:7077/api/itens';
+  private readonly apiUrlEntradas = 'https://localhost:7077/api/EntradaProduto';
 
   constructor(
     private http: HttpClient,
@@ -25,22 +24,25 @@ export class EntradaProdutoService {
   ) {}
 
   obterProdutos(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrlItens);
+    return this.cadastroItensService.obterItens();
   }
 
   obterHistoricoEntradas(): Observable<EntradaProduto[]> {
+    // Busca o histórico diretamente da tabela entrada_produto no MySQL
     return this.http.get<EntradaProduto[]>(this.apiUrlEntradas);
   }
 
-  registrarEntrada(entrada: EntradaProduto): Observable<EntradaProduto> {
-    return this.http.post<EntradaProduto>(this.apiUrlEntradas, entrada).pipe(
-      tap((res) => {
-        // Ao confirmar a resposta com sucesso da API, atualiza a quantidade no cadastro/estoque local
-        this.cadastroItensService.atualizarEstoqueProduto(
-          Number(entrada.idItem), 
-          Number(entrada.quantidadeEntrada)
-        );
-      })
-    );
+  registrarEntrada(entrada: EntradaProduto): Observable<any> {
+    // Envia exatamente os campos mapeados no EntradaProdutoDTO do C#
+    const payload = {
+      idItem: Number(entrada.idItem),
+      dataEntradaProduto: entrada.dataEntradaProduto,
+      quantidadeEntrada: Number(entrada.quantidadeEntrada),
+      unidade: entrada.unidade || 'UN',
+      valorUnitarioEntrada: Number(entrada.valorUnitarioEntrada)
+    };
+
+    // Dispara o POST real para gravar em 'entrada_produto' e somar em 'estoque'
+    return this.http.post<any>(this.apiUrlEntradas, payload);
   }
 }

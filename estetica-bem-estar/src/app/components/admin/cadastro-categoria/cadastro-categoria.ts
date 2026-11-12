@@ -36,20 +36,28 @@ export class CadastroCategoriaComponent implements OnInit {
   }
 
   salvarCategoria(): void {
-    if (!this.nomeCategoria.trim()) {
+    const nomeLimpo = this.nomeCategoria.trim();
+
+    if (!nomeLimpo) {
       alert('Por favor, informe o nome da categoria!');
       return;
     }
 
-    this.categoriaService.cadastrar(this.nomeCategoria.trim()).subscribe({
-      next: () => {
-        alert(`Categoria "${this.nomeCategoria}" cadastrada com sucesso!`);
+    this.categoriaService.cadastrar(nomeLimpo).subscribe({
+      next: (catCadastrada: Categoria) => {
+        alert(`Categoria "${nomeLimpo}" cadastrada com sucesso!`);
         this.nomeCategoria = '';
+        
+        // Adiciona na lista local imediatamente e sincroniza com a API
+        if (catCadastrada && catCadastrada.nomeCategoria) {
+          this.categorias = [...this.categorias, catCadastrada];
+        }
         this.carregarCategorias();
       },
       error: (err: any) => {
         console.error('Erro ao salvar categoria:', err);
-        alert('Falha ao salvar a categoria no banco de dados.');
+        const msg = err?.error?.mensagem || 'Falha ao salvar a categoria no banco de dados.';
+        alert(msg);
       }
     });
   }

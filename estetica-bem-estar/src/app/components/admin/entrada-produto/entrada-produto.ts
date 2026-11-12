@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, finalize } from 'rxjs/operators';
 
 import { EntradaProdutoService, EntradaProduto } from '../../../services/entrada.service';
 import { CadastroItensService, ItemSistema } from '../../../services/cadastro.itens.service';
@@ -38,7 +38,8 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private entradaService: EntradaProdutoService,
-    private cadastroItensService: CadastroItensService
+    private cadastroItensService: CadastroItensService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -50,12 +51,24 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
     this.subItens?.unsubscribe();
   }
 
+  /**
+   * Converte valores numéricos mesmo se digitados com vírgula (ex: "145,50" -> 145.5)
+   */
+  private converterParaNumero(valor: any): number {
+    if (valor === null || valor === undefined || valor === '') return 0;
+    if (typeof valor === 'number') return isNaN(valor) ? 0 : valor;
+    const limpo = String(valor).replace(/\s/g, '').replace(',', '.');
+    const num = parseFloat(limpo);
+    return isNaN(num) ? 0 : num;
+  }
+
   carregarApenasProdutos(): void {
     this.subItens = this.cadastroItensService.obterItens().subscribe({
       next: (itens: ItemSistema[]) => {
-        this.produtosDisponiveis = itens.filter(
+        this.produtosDisponiveis = (itens || []).filter(
           item => item.tipo === 'produto' || (item as any).tipoItem === 'P'
         );
+        this.cdr.detectChanges();
       },
       error: (err: any) => console.error('Erro ao carregar produtos:', err)
     });
@@ -69,13 +82,11 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
 
     if (this.produtoSelecionado) {
       const prod = this.produtoSelecionado as any;
-      this.entrada.valorUnitarioEntrada = Number(
-        prod.preco || 
-        prod.precoUnitario || 
-        prod.preco_venda || 
-        prod.precoVenda || 
-        0
+      // Preenche apenas como sugestão inicial ao trocar de produto
+      this.entrada.valorUnitarioEntrada = this.converterParaNumero(
+        prod.preco ?? prod.precoUnitario ?? prod.preco_venda ?? prod.precoVenda ?? 0
       );
+      this.entrada.unidade = prod.unidade || 'UN';
     }
   }
 
@@ -84,7 +95,8 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
       catchError(() => of([]))
     ).subscribe({
       next: (historico: EntradaProduto[]) => {
-        this.historicoEntradas = historico || [];
+        this.historicoEntradas = [...(historico || [])].reverse();
+        this.cdr.detectChanges();
       }
     });
   }
@@ -96,8 +108,8 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
     this.mensagemErro = '';
 
     const idItemNum = Number(this.entrada.idItem);
-    const qtdNum = Number(this.entrada.quantidadeEntrada);
-    const valorNum = Number(this.entrada.valorUnitarioEntrada);
+    const qtdNum = this.converterParaNumero(this.entrada.quantidadeEntrada);
+    const valorNum = this.converterParaNumero(this.entrada.valorUnitarioEntrada);
 
     if (!idItemNum || idItemNum === 0) {
       this.mensagemErro = 'Por favor, selecione um produto válido.';
@@ -113,39 +125,36 @@ export class EntradaProdutoComponent implements OnInit, OnDestroy {
     }
 
     this.enviando = true;
+    this.cdr.detectChanges();
 
     const payload: EntradaProduto = {
-      ...this.entrada,
       idItem: idItemNum,
+      dataEntradaProduto: this.entrada.dataEntradaProduto,
       quantidadeEntrada: qtdNum,
+      unidade: this.entrada.unidade || 'UN',
       valorUnitarioEntrada: valorNum
     };
 
-    // 1. Atualiza o estoque local no serviço
-    this.cadastroItensService.atualizarEstoqueProduto(idItemNum, qtdNum, valorNum);
+    this.entradaService.registrarEntrada(payload).pipe(
+      finalize(() => {
+        this.enviando = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.historicoEntradas = [payload, ...this.historicoEntradas];
+        this.mensagemSucesso = 'Entrada de produto gravada com sucesso!';
+        this.limparFormulario();
+        this.cdr.detectChanges();
 
-    // 2. Atualiza a lista em memória do componente usando cast seguro
-    const itemNaLista = this.produtosDisponiveis.find(
-      p => Number((p as any).id || p.idItem || (p as any).iditem) === idItemNum
-    );
-    if (itemNaLista) {
-      const prod = itemNaLista as any;
-      prod.preco = valorNum;
-      prod.precoUnitario = valorNum;
-      prod.preco_venda = valorNum;
-      prod.precoVenda = valorNum;
-    }
-
-    // 3. Atualiza histórico na tela e limpa formulário
-    this.historicoEntradas.unshift(payload);
-    this.mensagemSucesso = 'Entrada de produto registrada e estoque/preço atualizados!';
-    this.limparFormulario();
-    this.enviando = false;
-
-    // 4. Envia para a API em segundo plano
-    this.entradaService.registrarEntrada(payload).subscribe({
-      next: () => console.log('Sincronizado com o backend com sucesso!'),
-      error: (err: any) => console.warn('Backend indisponível. Mantido no estoque local.', err)
+        this.carregarHistorico();
+        this.carregarApenasProdutos();
+      },
+      error: (err: any) => {
+        console.error('Erro detalhado do backend:', err);
+        const msg = err?.error?.erro || err?.error?.mensagem || 'Falha ao gravar no banco de dados.';
+        this.mensagemErro = msg;
+      }
     });
   }
 
