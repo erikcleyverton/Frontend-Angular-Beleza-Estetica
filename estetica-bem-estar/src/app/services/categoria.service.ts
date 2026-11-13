@@ -58,8 +58,8 @@ export class CategoriaService {
    * Envia a DTO esperada no C# e devolve o objeto formatado
    */
   cadastrar(nomeOuObjeto: any): Observable<Categoria> {
-    const textoNome = typeof nomeOuObjeto === 'string' 
-      ? nomeOuObjeto 
+    const textoNome = typeof nomeOuObjeto === 'string'
+      ? nomeOuObjeto
       : (nomeOuObjeto?.nomeCategoria || nomeOuObjeto?.nome || nomeOuObjeto?.Nome || nomeOuObjeto?.categoria || '');
 
     const payload = {
@@ -83,6 +83,36 @@ export class CategoriaService {
 
   cadastrarCategoria(categoria: any): Observable<Categoria> {
     return this.cadastrar(categoria);
+  }
+
+  /**
+   * Atualiza uma categoria existente no C#/MySQL
+   */
+  atualizar(id: number, nomeOuObjeto: any): Observable<any> {
+    const textoNome = typeof nomeOuObjeto === 'string'
+      ? nomeOuObjeto
+      : (nomeOuObjeto?.nomeCategoria || nomeOuObjeto?.nome || nomeOuObjeto?.Nome || nomeOuObjeto?.categoria || '');
+
+    const payload = {
+      idCategoria: Number(id),
+      idcategoria: Number(id),
+      nome: textoNome,
+      nomeCategoria: textoNome,
+      categoria: textoNome,
+      categoria1: textoNome
+    };
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.put<any>(`${this.apiUrl}/${id}`, payload, { headers }).pipe(
+      catchError(() => this.http.put<any>(`${this.apiUrlFallback}/${id}`, payload, { headers })),
+      catchError(err => {
+        console.error(`Erro ao atualizar categoria ID ${id}:`, err);
+        throw err;
+      })
+    );
   }
 
   excluirCategoria(id: number): Observable<any> {

@@ -110,31 +110,36 @@ export class CarrinhoService {
       return throwError(() => new Error('O carrinho está vazio.'));
     }
 
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const dataFormatada = `${ano}-${mes}-${dia}`;
+
     const payload = {
       idPessoa: Number(idPessoa),
-      idFuncionario: Number(idFuncionario),
-      dataAtendimento: new Date().toISOString(),
-      statusAtendimento: 'Aberto',
-      status: 'Aberto',
-      valorTotal: this.obterTotal(),
+      dataAtendimento: dataFormatada,
+      statusAtendimento: 'A',
       itens: itensCarrinho.map((item: ItemCarrinho) => ({
         idItem: Number(item.id),
+        idFuncionario: Number(idFuncionario || 15),
         quantidade: Number(item.quantidade),
         valorUnitario: Number(item.precoUnitario)
       }))
     };
 
+    console.log('Enviando payload para POST /api/Atendimento:', payload);
+
     return this.http.post<any>(this.apiUrl, payload).pipe(
-      tap((res) => this.salvarEmCacheLocal(res || payload)),
+      tap((res) => this.salvarEmCacheLocal(res || payload, idFuncionario)),
       catchError((err) => {
-        console.warn('API indisponível. Gravando localmente...', err);
-        this.salvarEmCacheLocal(payload);
+        console.warn('Erro ao enviar para API:', err);
         return throwError(() => err);
       })
     );
   }
 
-  private salvarEmCacheLocal(pedido: any): void {
+  private salvarEmCacheLocal(pedido: any, idFuncionarioParam: number = 15): void {
     const LOCAL_KEY = 'pedidos_cache_local';
     const salvos = localStorage.getItem(LOCAL_KEY);
     const lista: any[] = salvos ? JSON.parse(salvos) : [];
@@ -144,12 +149,12 @@ export class CarrinhoService {
       return (idNum < 100000 && idNum > max) ? idNum : max;
     }, 14);
 
-    const novoId = pedido.idAtendimento && Number(pedido.idAtendimento) < 100000 
-      ? Number(pedido.idAtendimento) 
+    const novoId = pedido.idAtendimento && Number(pedido.idAtendimento) < 100000
+      ? Number(pedido.idAtendimento)
       : maiorId + 1;
 
-    const idFunc = Number(pedido.idFuncionario || pedido.id_funcionario || 15);
-    
+    const idFunc = Number(pedido.idFuncionario || idFuncionarioParam || 15);
+
     const mapaFuncionarios: { [key: number]: string } = {
       2: 'Ethel',
       3: 'Fernanda Olivia',
@@ -161,7 +166,6 @@ export class CarrinhoService {
 
     const nomeFuncionario = mapaFuncionarios[idFunc] || `Profissional #${idFunc}`;
 
-    // Passa o funcionário para DENTRO DE CADA ITEM
     const itensComFuncionario = (pedido.itens || []).map((item: any) => ({
       ...item,
       idFuncionario: idFunc,

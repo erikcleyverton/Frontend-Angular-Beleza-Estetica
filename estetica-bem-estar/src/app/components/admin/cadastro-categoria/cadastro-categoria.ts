@@ -14,6 +14,7 @@ import { CategoriaService, Categoria } from '../../../services/categoria.service
 export class CadastroCategoriaComponent implements OnInit {
   public nomeCategoria: string = '';
   public categorias: Categoria[] = [];
+  public idEditando: number | null = null;
 
   constructor(
     private categoriaService: CategoriaService,
@@ -35,6 +36,16 @@ export class CadastroCategoriaComponent implements OnInit {
     });
   }
 
+  editarCategoria(cat: any): void {
+    this.idEditando = Number(cat.idCategoria ?? cat.idcategoria ?? cat.id);
+    this.nomeCategoria = cat.nomeCategoria ?? cat.nome ?? cat.categoria ?? '';
+  }
+
+  cancelarEdicao(): void {
+    this.idEditando = null;
+    this.nomeCategoria = '';
+  }
+
   salvarCategoria(): void {
     const nomeLimpo = this.nomeCategoria.trim();
 
@@ -43,23 +54,37 @@ export class CadastroCategoriaComponent implements OnInit {
       return;
     }
 
-    this.categoriaService.cadastrar(nomeLimpo).subscribe({
-      next: (catCadastrada: Categoria) => {
-        alert(`Categoria "${nomeLimpo}" cadastrada com sucesso!`);
-        this.nomeCategoria = '';
-        
-        // Adiciona na lista local imediatamente e sincroniza com a API
-        if (catCadastrada && catCadastrada.nomeCategoria) {
-          this.categorias = [...this.categorias, catCadastrada];
+    if (this.idEditando) {
+      this.categoriaService.atualizar(this.idEditando, nomeLimpo).subscribe({
+        next: () => {
+          alert(`Categoria "${nomeLimpo}" atualizada com sucesso!`);
+          this.cancelarEdicao();
+          this.carregarCategorias();
+        },
+        error: (err: any) => {
+          console.error('Erro ao atualizar categoria:', err);
+          const msg = err?.error?.mensagem || 'Falha ao atualizar a categoria no banco de dados.';
+          alert(msg);
         }
-        this.carregarCategorias();
-      },
-      error: (err: any) => {
-        console.error('Erro ao salvar categoria:', err);
-        const msg = err?.error?.mensagem || 'Falha ao salvar a categoria no banco de dados.';
-        alert(msg);
-      }
-    });
+      });
+    } else {
+      this.categoriaService.cadastrar(nomeLimpo).subscribe({
+        next: (catCadastrada: Categoria) => {
+          alert(`Categoria "${nomeLimpo}" cadastrada com sucesso!`);
+          this.nomeCategoria = '';
+
+          if (catCadastrada && catCadastrada.nomeCategoria) {
+            this.categorias = [...this.categorias, catCadastrada];
+          }
+          this.carregarCategorias();
+        },
+        error: (err: any) => {
+          console.error('Erro ao salvar categoria:', err);
+          const msg = err?.error?.mensagem || 'Falha ao salvar a categoria no banco de dados.';
+          alert(msg);
+        }
+      });
+    }
   }
 
   voltar(): void {

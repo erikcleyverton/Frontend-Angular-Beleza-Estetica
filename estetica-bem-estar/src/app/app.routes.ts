@@ -5,6 +5,7 @@ import { Home } from './components/loja/home/home';
 import { CadastroClienteComponent } from './components/loja/cadastro-cliente/cadastro-cliente';
 import { CatalogoComponent } from './components/loja/catalogo/catalogo';
 import { CarrinhoComponent } from './components/loja/carrinho/carrinho';
+import { MeusPedidosComponent } from './components/loja/meus-pedidos/meus-pedidos';
 
 // Módulo 2 - Painel Administrativo
 import { CadastroItemComponent } from './components/admin/cadastro-item/cadastro-item';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'cadastro-cliente/:id', component: CadastroClienteComponent },
   { path: 'catalogo', component: CatalogoComponent },
   { path: 'carrinho', component: CarrinhoComponent },
+  { path: 'meus-pedidos', component: MeusPedidosComponent },
 
   // Módulo 2 - Painel Administrativo
   { path: 'admin', redirectTo: 'admin/clientes', pathMatch: 'full' },

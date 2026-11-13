@@ -1,5 +1,4 @@
 <div class="container-admin">
-  
   <div class="header-admin">
     <button type="button" class="btn-voltar" (click)="voltar()">← Voltar</button>
     <h2 class="title-admin">Gerenciar Categorias</h2>
@@ -9,15 +8,27 @@
   <div class="card-form">
     <div class="form-group">
       <label>NOME DA CATEGORIA:</label>
-      <input 
-        type="text" 
-        [(ngModel)]="nomeCategoria" 
-        placeholder="Ex: Faciais, Dermocosméticos, Massagens..." 
-        class="input-custom">
+      <input
+        type="text"
+        [(ngModel)]="nomeCategoria"
+        placeholder="Ex: Faciais, Dermocosméticos, Massagens..."
+        class="input-custom"
+      />
     </div>
 
-    <div class="form-actions">
-      <button type="button" class="btn-salvar" (click)="salvarCategoria()">Cadastrar Categoria</button>
+    <div class="form-actions" style="display: flex; gap: 10px;">
+      <button type="button" class="btn-salvar" (click)="salvarCategoria()">
+        {{ idEditando ? 'Salvar Alterações' : 'Cadastrar Categoria' }}
+      </button>
+
+      <button
+        *ngIf="idEditando"
+        type="button"
+        class="btn-voltar"
+        (click)="cancelarEdicao()"
+      >
+        Cancelar
+      </button>
     </div>
   </div>
 
@@ -27,15 +38,24 @@
         <tr>
           <th style="width: 80px;">ID</th>
           <th>NOME DA CATEGORIA</th>
+          <th style="width: 140px; text-align: center;">AÇÕES</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let cat of categorias">
           <td>#{{ cat.idCategoria }}</td>
           <td>{{ cat.nomeCategoria }}</td>
+          <td style="text-align: center;">
+            <button
+              type="button"
+              class="btn-voltar"
+              (click)="editarCategoria(cat)"
+            >
+              Editar
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
-
 </div>

@@ -1,1 +1,114 @@
-<p>meus-pedidos works!</p>
+<section class="pedidos-container">
+  <header class="pedidos-header">
+    <div>
+      <h2>Meus Pedidos</h2>
+      <p class="subtitulo" *ngIf="nomeClienteLogado">
+        Olá, <strong>{{ nomeClienteLogado }}</strong>! Acompanhe abaixo o status dos seus pedidos
+      </p>
+      <p class="subtitulo" *ngIf="!nomeClienteLogado">
+        Acompanhe o histórico, os itens adquiridos e o status dos seus atendimentos
+      </p>
+    </div>
+
+    <div class="acoes-topo">
+      <button type="button" class="btn-voltar" (click)="voltar()">
+        ← Voltar
+      </button>
+
+      <select [(ngModel)]="filtroStatus" (change)="aplicarFiltro()" class="select-filtro">
+        <option value="TODOS">Todos os Status</option>
+        <option value="ABERTO">Abertos</option>
+        <option value="CONCLU">Concluídos</option>
+        <option value="CANCEL">Cancelados</option>
+      </select>
+
+      <button type="button" class="btn-novo-pedido" (click)="irParaCatalogo()">
+        + Novo Pedido
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="mensagemSucesso" class="alert alert-sucesso">{{ mensagemSucesso }}</div>
+  <div *ngIf="mensagemErro" class="alert alert-erro">{{ mensagemErro }}</div>
+
+  <div *ngIf="carregando" class="estado-vazio">
+    <p>Carregando seus pedidos...</p>
+  </div>
+
+  <div *ngIf="!carregando && pedidosFiltrados.length === 0" class="estado-vazio">
+    <h3>Nenhum pedido encontrado</h3>
+    <p>Você ainda não possui pedidos registrados neste filtro.</p>
+    <button type="button" class="btn-novo-pedido" (click)="irParaCatalogo()">Explorar Catálogo</button>
+  </div>
+
+  <!-- Lista de Cards de Pedidos da Cliente -->
+  <div class="lista-pedidos" *ngIf="!carregando && pedidosFiltrados.length > 0">
+    <article
+      class="card-pedido"
+      *ngFor="let pedido of pedidosFiltrados"
+      [class.expandido]="pedidoExpandidoId === pedido.idAtendimento"
+    >
+      <div class="card-pedido-topo" (click)="alternarDetalhes(pedido.idAtendimento)">
+        <div class="info-principal">
+          <span class="numero-pedido">Pedido #{{ pedido.idAtendimento }}</span>
+          <span class="data-pedido">Data: {{ pedido.dataAtendimento | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <div class="info-resumo">
+          <span class="badge-status" [ngClass]="obterClasseStatus(pedido.statusAtendimento)">
+            {{ formatarStatus(pedido.statusAtendimento) }}
+          </span>
+
+          <div class="valor-total">
+            <small>Total</small>
+            <strong>R$ {{ calcularTotalPedido(pedido) | number:'1.2-2' }}</strong>
+          </div>
+
+          <span class="seta-expandir">
+            {{ pedidoExpandidoId === pedido.idAtendimento ? '▲' : '▼' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-pedido-detalhes" *ngIf="pedidoExpandidoId === pedido.idAtendimento">
+        <table class="tabela-itens">
+          <thead>
+            <tr>
+              <th>Produto / Serviço</th>
+              <th>Profissional</th>
+              <th>Qtd</th>
+              <th>Valor Unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pedido.itens">
+              <td><strong>{{ item.item || ('Item #' + item.idItem) }}</strong></td>
+              <td>
+                <ng-container *ngIf="item.nomeFuncionario && item.nomeFuncionario.trim() !== '' && item.nomeFuncionario !== 'Atendimento Online'; else semProfissional">
+                  {{ item.nomeFuncionario }} <small *ngIf="item.cargo">({{ item.cargo }})</small>
+                </ng-container>
+                <ng-template #semProfissional>
+                  <span style="color: #9ca3af;">—</span>
+                </ng-template>
+              </td>
+              <td>{{ item.quantidade }}</td>
+              <td>R$ {{ item.valorUnitario | number:'1.2-2' }}</td>
+              <td><strong>R$ {{ (item.quantidade * item.valorUnitario) | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="rodape-detalhes" *ngIf="podeCancelar(pedido.statusAtendimento)">
+          <button
+            type="button"
+            class="btn-cancelar"
+            (click)="cancelarPedido(pedido, $event)"
+          >
+            Cancelar Pedido
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

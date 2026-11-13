@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { CarrinhoService, ItemCarrinho } from '../../../services/carrinho.service';
 import { HttpClient } from '@angular/common/http';
 
@@ -23,8 +24,12 @@ export class CarrinhoComponent implements OnInit, OnDestroy {
   idFuncionarioSelecionado: number | null = null;
   temServicoNoCarrinho: boolean = false;
 
+  // ID da Carly Rae Jepsen (localizado dinamicamente pelas APIs)
+  idClienteCarly: number | null = null;
+
   private subCarrinho?: Subscription;
-  private readonly apiPessoa = 'https://localhost:7077/api/PessoaEndereco';
+  private readonly apiPessoa = 'https://localhost:7077/api/Pessoa';
+  private readonly apiPessoaEndereco = 'https://localhost:7077/api/PessoaEndereco';
 
   constructor(
     private carrinhoService: CarrinhoService,
@@ -41,7 +46,7 @@ export class CarrinhoComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.carregarFuncionarios();
+    this.carregarDadosDasDuasApis();
   }
 
   ngOnDestroy(): void {
@@ -54,41 +59,61 @@ export class CarrinhoComponent implements OnInit, OnDestroy {
     );
   }
 
-  carregarFuncionarios(): void {
+  carregarDadosDasDuasApis(): void {
     const idsFuncionariosValidos = [2, 3, 6, 15, 16, 17];
 
-    this.http.get<any[]>(this.apiPessoa).subscribe({
-      next: (dados) => {
-        const lista = dados || [];
-        this.funcionarios = lista.filter(p =>
-          idsFuncionariosValidos.includes(Number(p.idpessoa || p.idPessoa || p.id))
-        );
+    forkJoin({
+      pessoas: this.http.get<any[]>(this.apiPessoa).pipe(catchError(() => of([]))),
+      pessoasEndereco: this.http.get<any[]>(this.apiPessoaEndereco).pipe(catchError(() => of([])))
+    }).subscribe(({ pessoas, pessoasEndereco }) => {
+      const listaUnificada = [...(pessoas || []), ...(pessoasEndereco || [])];
 
-        if (this.funcionarios.length === 0) {
-          this.funcionarios = [
-            { idPessoa: 6, nome: 'Rafael Ferreira (Cabeleireiro)' },
-            { idPessoa: 15, nome: 'Dra. Juliana Mendes (Biomédica)' },
-            { idPessoa: 16, nome: 'Dra. Beatriz Lima (Biomédica)' },
-            { idPessoa: 17, nome: 'Lucas Barber (Cabeleireiro)' }
-          ];
+      // 1. Localiza automaticamente a cliente Carly Rae Jepsen
+      const registroCarly = listaUnificada.find(item => {
+        const nome = item?.nome || item?.pessoa?.nome || '';
+        return nome.toLowerCase().includes('carly');
+      });
+
+      if (registroCarly) {
+        const p = registroCarly.pessoa || registroCarly;
+        this.idClienteCarly = Number(p.idpessoa || p.idPessoa || p.id);
+        localStorage.setItem('idPessoa', String(this.idClienteCarly));
+        localStorage.setItem('nomeCliente', p.nome || 'Carly Rae Jepsen');
+        console.log('Carly Rae Jepsen localizada com ID:', this.idClienteCarly);
+      } else {
+        const idSalvo = localStorage.getItem('idPessoa');
+        if (idSalvo) {
+          this.idClienteCarly = Number(idSalvo);
         }
-
-        const idxFunc = Math.floor(Math.random() * this.funcionarios.length);
-        this.idFuncionarioSelecionado = Number(
-          this.funcionarios[idxFunc].idpessoa || 
-          this.funcionarios[idxFunc].idPessoa || 
-          this.funcionarios[idxFunc].id
-        );
-      },
-      error: () => {
-        this.funcionarios = [
-          { idPessoa: 6, nome: 'Rafael Ferreira' },
-          { idPessoa: 15, nome: 'Dra. Juliana Mendes' },
-          { idPessoa: 16, nome: 'Dra. Beatriz Lima' },
-          { idPessoa: 17, nome: 'Lucas Barber' }
-        ];
-        this.idFuncionarioSelecionado = 15;
+        console.warn('Carly não encontrada nas APIs. ID em cache:', this.idClienteCarly);
       }
+
+      // 2. Carrega funcionários sem duplicar
+      const mapaFuncs = new Map<number, any>();
+      listaUnificada.forEach(item => {
+        const p = item?.pessoa || item;
+        const id = Number(p.idpessoa || p.idPessoa || p.id);
+        if (idsFuncionariosValidos.includes(id) && !mapaFuncs.has(id)) {
+          mapaFuncs.set(id, p);
+        }
+      });
+
+      this.funcionarios = Array.from(mapaFuncs.values());
+
+      if (this.funcionarios.length === 0) {
+        this.funcionarios = [
+          { idPessoa: 6, nome: 'Rafael Ferreira (Cabeleireiro)' },
+          { idPessoa: 15, nome: 'Dra. Juliana Mendes (Biomédica)' },
+          { idPessoa: 16, nome: 'Dra. Beatriz Lima (Biomédica)' },
+          { idPessoa: 17, nome: 'Lucas Barber (Cabeleireiro)' }
+        ];
+      }
+
+      const idxFunc = Math.floor(Math.random() * this.funcionarios.length);
+      const funcEscolhido = this.funcionarios[idxFunc];
+      this.idFuncionarioSelecionado = Number(
+        funcEscolhido.idpessoa || funcEscolhido.idPessoa || funcEscolhido.id
+      );
     });
   }
 
@@ -126,27 +151,32 @@ export class CarrinhoComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.idClienteCarly) {
+      alert('Não foi possível localizar o cadastro da cliente Carly Rae Jepsen na API.');
+      return;
+    }
+
     if (this.enviandoAgendamento || this.carregando) return;
     this.enviandoAgendamento = true;
     this.carregando = true;
 
-    const idClienteFinal = 1;
+    const idClienteFinal = this.idClienteCarly;
     const idFuncionarioFinal = this.temServicoNoCarrinho ? (this.idFuncionarioSelecionado || 15) : 15;
 
     this.carrinhoService.finalizarAgendamentoAPI(idClienteFinal, idFuncionarioFinal).subscribe({
       next: () => {
-        alert('✨ Pedido registado com sucesso!');
+        localStorage.setItem('idPessoa', String(idClienteFinal));
+        alert('✨ Pedido registado com sucesso para Carly Rae Jepsen!');
         this.carrinhoService.limparCarrinho();
         this.enviandoAgendamento = false;
         this.carregando = false;
-        this.router.navigate(['/admin/pedidos']);
+        this.router.navigate(['/meus-pedidos']);
       },
-      error: () => {
-        alert('✨ Pedido registado no sistema!');
-        this.carrinhoService.limparCarrinho();
+      error: (err) => {
+        console.error('Erro detalhado ao finalizar pedido:', err?.error || err);
+        alert('Erro ao registar o pedido: ' + (err?.error?.message || err?.error || 'Verifique o console (F12).'));
         this.enviandoAgendamento = false;
         this.carregando = false;
-        this.router.navigate(['/admin/pedidos']);
       }
     });
   }
