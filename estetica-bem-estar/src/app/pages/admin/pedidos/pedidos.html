@@ -43,9 +43,15 @@
               {{ normalizarStatus(p.statusAtendimento || p.status) }}
             </span>
           </td>
-          <td>
+          <td style="display: flex; gap: 8px;">
             <button class="btn-detalhes" (click)="verDetalhes(p.idAtendimento || p.idatendimento || p.id)">
               Detalhes
+            </button>
+            <button
+              type="button"
+              (click)="deletarPedido(p, $event)"
+              style="background-color: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+              Excluir
             </button>
           </td>
         </tr>
@@ -68,7 +74,7 @@
       <div class="modal-body">
         <div class="info-grid">
           <div><strong>Cliente:</strong> {{ obterNomeCliente(pedidoSelecionado) }}</div>
-          <div><strong>Data:</strong> {{ pedidoSelecionado.dataAtendimento }}</div>
+          <div><strong>Data:</strong> {{ pedidoSelecionado.dataAtendimento | date:'dd/MM/yyyy HH:mm' }}</div>
           <div><strong>Valor Total:</strong> R$ {{ calcularValorTotal(pedidoSelecionado) | number:'1.2-2' }}</div>
           <div>
             <strong>Status Atual:</strong> 
@@ -95,7 +101,6 @@
               <td>{{ item.quantidade || item.qtd || 1 }}</td>
               <td>R$ {{ (item.valorUnitario || item.precoUnitario || item.preco || 0) | number:'1.2-2' }}</td>
               <td>R$ {{ ((item.quantidade || 1) * (item.valorUnitario || item.precoUnitario || item.preco || 0)) | number:'1.2-2' }}</td>
-              <!-- EXIBE O NOME DO FUNCIONÁRIO NO ITEM OU NA RAIZ DO PEDIDO -->
               <td class="text-funcionario">
                 {{ obterNomeFuncionario(item) }}
               </td>
@@ -110,6 +115,12 @@
             <button class="btn-st st-processamento" (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.id, 'Em Processamento')">Em Processamento</button>
             <button class="btn-st st-concluido" (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.id, 'Concluído')">Concluir</button>
             <button class="btn-st st-cancelado" (click)="alterarStatus(pedidoSelecionado.idAtendimento || pedidoSelecionado.id, 'Cancelado')">Cancelar</button>
+            <button
+              type="button"
+              (click)="deletarPedido(pedidoSelecionado)"
+              style="background-color: #dc3545; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+              Excluir Pedido
+            </button>
           </div>
         </div>
       </div>

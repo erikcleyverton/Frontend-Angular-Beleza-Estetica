@@ -42,18 +42,22 @@ export class MeusPedidosComponent implements OnInit {
     this.carregando = true;
     this.pedidosService.obterClientes().subscribe({
       next: (clientes: any[]) => {
-        const encontrada = (clientes || []).find(
-          c => (c.nome || '').toLowerCase().includes(this.CLIENTE_PADRAO_NOME.toLowerCase())
-        );
+        const encontrada = (clientes || []).find(c => {
+          const nome = (c.nome || c.nomePessoa || '').toLowerCase();
+          return nome.includes(this.CLIENTE_PADRAO_NOME.toLowerCase());
+        });
 
         if (encontrada) {
-          this.idClienteLogado = Number(encontrada.idpessoa || encontrada.idPessoa);
-          this.nomeClienteLogado = encontrada.nome;
+          this.idClienteLogado = Number(encontrada.idPessoa || encontrada.idpessoa || encontrada.id);
+          this.nomeClienteLogado = encontrada.nome || encontrada.nomePessoa;
           localStorage.setItem('idPessoa', String(this.idClienteLogado));
           localStorage.setItem('nomeCliente', this.nomeClienteLogado);
+          this.carregarPedidos();
+        } else {
+          this.carregando = false;
+          this.mensagemErro = 'Cadastro da cliente Carly não encontrado.';
+          this.cdr.detectChanges();
         }
-
-        this.carregarPedidos();
       },
       error: () => {
         this.carregando = false;
@@ -68,6 +72,7 @@ export class MeusPedidosComponent implements OnInit {
       this.carregando = false;
       this.pedidos = [];
       this.pedidosFiltrados = [];
+      this.cdr.detectChanges();
       return;
     }
 
@@ -80,12 +85,35 @@ export class MeusPedidosComponent implements OnInit {
         this.cdr.detectChanges();
       })
     ).subscribe({
-      next: (dados: PedidoCliente[]) => {
-        this.pedidos = (dados || []).sort((a, b) => b.idAtendimento - a.idAtendimento);
+      next: (dados: any[]) => {
+        // Garante que apenas pedidos pertencentes à Carly sejam carregados,
+        // mesmo que o endpoint da API retorne a lista geral de atendimentos.
+        const apenasDaCarly = (dados || []).filter(p => {
+          const idDoPedido = Number(
+            p.idPessoa ?? p.idpessoa ?? p.idCliente ?? p.id_pessoa ?? p.pessoa?.idPessoa ?? p.pessoa?.id ?? 0
+          );
+          const nomeDoPedido = (
+            p.nomePessoa || p.nomeCliente || p.cliente || p.pessoa?.nome || ''
+          ).toLowerCase();
+
+          if (idDoPedido > 0) {
+            return idDoPedido === this.idClienteLogado;
+          }
+          return nomeDoPedido.includes(this.CLIENTE_PADRAO_NOME.toLowerCase());
+        });
+
+        this.pedidos = apenasDaCarly.sort((a, b) => {
+          const idA = Number(a.idAtendimento || a.idatendimento || a.id || 0);
+          const idB = Number(b.idAtendimento || b.idatendimento || b.id || 0);
+          return idB - idA;
+        });
+
         if (this.pedidos.length > 0 && !this.nomeClienteLogado) {
           this.nomeClienteLogado = this.pedidos[0].nomePessoa;
         }
+
         this.aplicarFiltro();
+
         if (this.pedidosFiltrados.length > 0 && this.pedidoExpandidoId === null) {
           this.pedidoExpandidoId = this.pedidosFiltrados[0].idAtendimento;
         }

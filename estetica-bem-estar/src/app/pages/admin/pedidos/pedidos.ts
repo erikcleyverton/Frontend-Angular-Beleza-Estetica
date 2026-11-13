@@ -23,13 +23,13 @@ export class PedidosComponent implements OnInit {
   public pedidoSelecionado: any = null;
   public mensagemSucesso: string = '';
   public enviando: boolean = false;
-  
+
   private catalogoItens: ItemSistema[] = [];
-  private clientesReais: string[] = []; 
-  private readonly idsFuncionarios: number[] = [2, 6, 15, 16, 17];
+  private mapaClientes: Map<number, string> = new Map<number, string>();
 
   private readonly apiUrl = 'https://localhost:7077/api/Atendimento';
   private readonly LOCAL_KEY = 'pedidos_cache_local';
+  private readonly DELETADOS_KEY = 'pedidos_deletados_ids';
 
   constructor(
     private http: HttpClient,
@@ -45,70 +45,59 @@ export class PedidosComponent implements OnInit {
     this.carregarPedidos();
   }
 
-  // Carrega os clientes do BD descartando IDs de funcionários e o nome repetido "Carly Rae Jepsen"
   carregarClientesReais(): void {
     this.clienteService.obterTodos().pipe(
-      catchError(() => of([]))
+      catchError(() => of([] as any[]))
     ).subscribe((dados: any[]) => {
-      const lista = dados || [];
-      this.clientesReais = lista
-        .filter(p => !this.idsFuncionarios.includes(Number(p.idPessoa || p.id)))
-        .map(p => p.nomePessoa || p.nome)
-        .filter(nome => !!nome && nome.trim() !== 'Carly Rae Jepsen');
-
-      if (this.clientesReais.length === 0) {
-        this.clientesReais = ['Fernanda Oli', 'Madonna', 'Ameixa', 'Joao Antony', 'Kali uchis'];
-      }
+      this.mapaClientes.clear();
+      (dados || []).forEach((p: any) => {
+        const id = Number(p.idPessoa || p.idpessoa || p.id);
+        const nome = p.nomePessoa || p.nome;
+        if (id > 0 && nome) {
+          this.mapaClientes.set(id, nome.trim());
+        }
+      });
       this.cd.detectChanges();
     });
   }
 
   carregarCatalogoItens(): void {
     this.cadastroItensService.obterItens().subscribe({
-      next: (itens) => {
+      next: (itens: ItemSistema[]) => {
         this.catalogoItens = itens || [];
         this.cd.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar catálogo:', err)
+      error: (err: any) => console.error('Erro ao carregar catálogo:', err)
     });
   }
 
   carregarPedidos(): void {
-    const salvosLocais = localStorage.getItem(this.LOCAL_KEY);
-    const pedidosLocais: any[] = salvosLocais ? JSON.parse(salvosLocais) : [];
+    const deletados = this.obterIdsDeletados();
 
     this.http.get<any[]>(this.apiUrl).pipe(
-      catchError(err => {
+      catchError((err: any) => {
         console.warn('API indisponível, exibindo lista local.', err);
-        return of([]);
+        const salvosLocais = localStorage.getItem(this.LOCAL_KEY);
+        return of((salvosLocais ? JSON.parse(salvosLocais) : []) as any[]);
       })
     ).subscribe({
-      next: (dadosApi) => {
-        const listaApi = dadosApi || [];
+      next: (dadosApi: any[]) => {
+        const listaApi: any[] = dadosApi || [];
         const mapa = new Map<number, any>();
 
-        // 1. Adiciona os dados reais vindos da API/Banco
-        listaApi.forEach(p => {
+        listaApi.forEach((p: any) => {
           const id = Number(p.idAtendimento || p.idatendimento || p.id);
-          if (id) mapa.set(id, p);
-        });
-
-        // 2. Preserva pedidos criados localmente ou atualizados que ainda não foram sincronizados
-        pedidosLocais.forEach(p => {
-          const id = Number(p.idAtendimento || p.idatendimento || p.id);
-          if (id) {
-            const pedidoExistente = mapa.get(id) || {};
-            mapa.set(id, { ...pedidoExistente, ...p });
+          if (id && !deletados.includes(id)) {
+            mapa.set(id, this.normalizarObjetoPedido(p));
           }
         });
 
-        this.pedidos = Array.from(mapa.values()).sort((a, b) => {
+        this.pedidos = Array.from(mapa.values()).sort((a: any, b: any) => {
           const idA = Number(a.idAtendimento || a.idatendimento || a.id || 0);
           const idB = Number(b.idAtendimento || b.idatendimento || b.id || 0);
           return idB - idA;
         });
 
-        // Atualiza a cache com a lista sincronizada
         localStorage.setItem(this.LOCAL_KEY, JSON.stringify(this.pedidos));
 
         this.aplicarFiltros();
@@ -117,36 +106,126 @@ export class PedidosComponent implements OnInit {
     });
   }
 
+  deletarPedido(pedido: any, event?: Event): void {
+    if (event) event.stopPropagation();
+
+    const id = Number(pedido?.idAtendimento || pedido?.idatendimento || pedido?.id);
+    if (!id) return;
+
+    if (!confirm(`Tem certeza que deseja excluir permanentemente o Pedido #${id}?`)) {
+      return;
+    }
+
+    // 1. Remove visualmente na hora e registra na lista de excluídos
+    this.registrarIdDeletado(id);
+    this.pedidos = this.pedidos.filter(
+      (p: any) => Number(p.idAtendimento || p.idatendimento || p.id) !== id
+    );
+    localStorage.setItem(this.LOCAL_KEY, JSON.stringify(this.pedidos));
+
+    if (this.pedidoSelecionado && Number(this.pedidoSelecionado.idAtendimento || this.pedidoSelecionado.id) === id) {
+      this.pedidoSelecionado = null;
+    }
+
+    this.aplicarFiltros();
+    this.mensagemSucesso = `Pedido #${id} excluído com sucesso!`;
+    this.cd.detectChanges();
+
+    setTimeout(() => {
+      this.mensagemSucesso = '';
+      this.cd.detectChanges();
+    }, 2000);
+
+    // 2. Envia o DELETE para a API em segundo plano
+    this.http.delete(`${this.apiUrl}/${id}`).pipe(
+      catchError((err: any) => {
+        console.warn(`API não suportou DELETE /${id} ou registro já removido:`, err);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  private obterIdsDeletados(): number[] {
+    try {
+      const raw = localStorage.getItem(this.DELETADOS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private registrarIdDeletado(id: number): void {
+    const lista = this.obterIdsDeletados();
+    if (!lista.includes(id)) {
+      lista.push(id);
+      localStorage.setItem(this.DELETADOS_KEY, JSON.stringify(lista));
+    }
+  }
+
+  private normalizarObjetoPedido(pedido: any): any {
+    const dataValida = this.resolverDataBruta(pedido);
+    return {
+      ...pedido,
+      dataAtendimento: dataValida,
+      data_atendimento: dataValida,
+      dataHora: dataValida,
+      data: dataValida
+    };
+  }
+
+  private resolverDataBruta(pedido: any): string {
+    const candidatos = [
+      pedido?.dataAtendimento,
+      pedido?.data_atendimento,
+      pedido?.dataHora,
+      pedido?.data_hora,
+      pedido?.dataPedido,
+      pedido?.dataCriacao,
+      pedido?.data,
+      pedido?.createdAt
+    ];
+
+    for (const val of candidatos) {
+      if (!val) continue;
+      const str = String(val).trim();
+      if (str === '' || str.startsWith('0001-01-01')) continue;
+
+      const matchBr = str.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+      if (matchBr) {
+        const [, dia, mes, ano, hora = '12', min = '00'] = matchBr;
+        return `${ano}-${mes}-${dia}T${hora}:${min}:00`;
+      }
+
+      return str;
+    }
+
+    return new Date().toISOString();
+  }
+
   obterNomeCliente(pedido: any): string {
     if (!pedido) return 'Cliente Não Identificado';
 
-    const idCliente = Number(pedido.idPessoa || pedido.idCliente || pedido.id_pessoa);
     const nomeApi = pedido.nomeCliente || pedido.nomePessoa || pedido.cliente || pedido.pessoa?.nome;
-
-    if (
-      nomeApi && 
-      typeof nomeApi === 'string' && 
-      nomeApi.trim() !== '' && 
-      nomeApi.trim() !== 'Carly Rae Jepsen' &&
-      !this.idsFuncionarios.includes(idCliente)
-    ) {
-      return nomeApi;
+    if (nomeApi && typeof nomeApi === 'string' && nomeApi.trim() !== '') {
+      return nomeApi.trim();
     }
 
-    if (this.clientesReais.length > 0) {
-      const idPedido = Number(pedido.idAtendimento || pedido.idatendimento || pedido.id || 0);
-      const indice = Math.abs(idPedido) % this.clientesReais.length;
-      return this.clientesReais[indice];
+    const idCliente = Number(
+      pedido.idPessoa ?? pedido.idpessoa ?? pedido.idCliente ?? pedido.id_pessoa ?? pedido.pessoa?.idPessoa ?? 0
+    );
+
+    if (idCliente > 0 && this.mapaClientes.has(idCliente)) {
+      return this.mapaClientes.get(idCliente)!;
     }
 
-    return 'Cliente Não Identificado';
+    return idCliente > 0 ? `Cliente #${idCliente}` : 'Cliente Não Identificado';
   }
 
   aplicarFiltros(): void {
     if (!this.filtroStatus) {
       this.pedidosFiltrados = [...this.pedidos];
     } else {
-      this.pedidosFiltrados = this.pedidos.filter(p => {
+      this.pedidosFiltrados = this.pedidos.filter((p: any) => {
         const status = this.normalizarStatus(p.statusAtendimento || p.status || p.status_atendimento);
         const filtro = this.normalizarStatus(this.filtroStatus);
         return status === filtro;
@@ -176,7 +255,12 @@ export class PedidosComponent implements OnInit {
 
     const idFunc = Number(objeto.idFuncionario || objeto.id_funcionario || objeto.idAtendente);
     const mapaFuncionarios: { [key: number]: string } = {
-      2: 'Ethel', 3: 'Fernanda Oli', 6: 'Rafael Ferreira', 15: 'Dra. Juliana Mendes', 16: 'Dra. Beatriz Lima', 17: 'Lucas Barber'
+      2: 'Ethel',
+      3: 'Fernanda Oli',
+      6: 'Rafael Ferreira',
+      15: 'Dra. Juliana Mendes',
+      16: 'Dra. Beatriz Lima',
+      17: 'Lucas Barber'
     };
 
     if (idFunc > 0 && mapaFuncionarios[idFunc]) return mapaFuncionarios[idFunc];
@@ -190,7 +274,7 @@ export class PedidosComponent implements OnInit {
 
     const idProcurado = Number(item.idItem || item.id_item || item.id);
     if (idProcurado > 0) {
-      const itemEncontrado = this.catalogoItens.find(i => Number(i.id || i.idItem) === idProcurado);
+      const itemEncontrado = this.catalogoItens.find((i: ItemSistema) => Number(i.id || i.idItem) === idProcurado);
       if (itemEncontrado) return itemEncontrado.nome || itemEncontrado.nomeItem || `Item #${idProcurado}`;
     }
     return idProcurado > 0 ? `Item #${idProcurado}` : 'Item';
@@ -210,7 +294,7 @@ export class PedidosComponent implements OnInit {
   }
 
   verDetalhes(idAtendimento: number): void {
-    const p = this.pedidos.find(item => Number(item.idAtendimento || item.idatendimento || item.id) === Number(idAtendimento));
+    const p = this.pedidos.find((item: any) => Number(item.idAtendimento || item.idatendimento || item.id) === Number(idAtendimento));
     if (p) this.pedidoSelecionado = { ...p };
   }
 
@@ -224,10 +308,8 @@ export class PedidosComponent implements OnInit {
     const id = Number(idAtendimento);
     this.enviando = true;
 
-    // 1. Atualiza visualmente e salva no localStorage na hora
     this.confirmarAtualizacaoStatus(id, novoStatus);
 
-    // 2. Envia a requisição HTTP para persistir no banco de dados
     const payload = {
       idAtendimento: id,
       statusAtendimento: novoStatus,
@@ -236,9 +318,8 @@ export class PedidosComponent implements OnInit {
 
     this.http.put(`${this.apiUrl}/${id}`, payload).pipe(
       catchError(() => {
-        // Fallback para a rota alternativa /id/status
         return this.http.put(`${this.apiUrl}/${id}/status`, payload).pipe(
-          catchError(err2 => {
+          catchError((err2: any) => {
             console.warn('Backend não respondeu ou rejeitou o PUT, mantendo alteração local.', err2);
             return of(null);
           })
@@ -252,7 +333,7 @@ export class PedidosComponent implements OnInit {
 
   private confirmarAtualizacaoStatus(idAtendimento: number, novoStatus: string): void {
     const pedido = this.pedidos.find(
-      p => Number(p.idAtendimento || p.idatendimento || p.id) === Number(idAtendimento)
+      (p: any) => Number(p.idAtendimento || p.idatendimento || p.id) === Number(idAtendimento)
     );
 
     if (pedido) {
@@ -267,7 +348,7 @@ export class PedidosComponent implements OnInit {
       }
 
       const pedidoFiltrado = this.pedidosFiltrados.find(
-        p => Number(p.idAtendimento || p.idatendimento || p.id) === Number(idAtendimento)
+        (p: any) => Number(p.idAtendimento || p.idatendimento || p.id) === Number(idAtendimento)
       );
       if (pedidoFiltrado) {
         pedidoFiltrado.statusAtendimento = novoStatus;
@@ -275,12 +356,11 @@ export class PedidosComponent implements OnInit {
         pedidoFiltrado.status_atendimento = novoStatus;
       }
 
-      // Garante a gravação no localStorage
       localStorage.setItem(this.LOCAL_KEY, JSON.stringify(this.pedidos));
 
       this.mensagemSucesso = `Status do Pedido #${idAtendimento} alterado para: ${novoStatus}`;
       this.cd.detectChanges();
-      
+
       setTimeout(() => {
         this.mensagemSucesso = '';
         this.enviando = false;
